@@ -1,0 +1,7 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Ethiopic:wght@400;700;900&family=Quicksand:wght@400;600;700;900&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Quicksand", ui-sans-serif, system-ui, sans-serif;
+  --font-geez: "Noto Sans Ethiopic", ui-sans-serif, system-ui, sans-serif;
+}

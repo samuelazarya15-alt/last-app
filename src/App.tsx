@@ -1,0 +1,282 @@
+/**
+ * @license
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
+import { DoveMascot } from './components/DoveMascot';
+import { StadiumGame } from './components/StadiumGame';
+import { TraceWordGame } from './components/TraceWordGame';
+import { FeedLionGame } from './components/FeedLionGame';
+import { FlyDoveGame } from './components/FlyDoveGame';
+import { MatchGame } from './components/MatchGame';
+import { MemoryMatchGame } from './components/MemoryMatchGame';
+import { FruitMarketGame } from './components/FruitMarketGame';
+import { HungryDoveGame } from './components/HungryDoveGame';
+import { SoundPopGame } from './components/SoundPopGame';
+import { HeritageTrainGame } from './components/HeritageTrainGame';
+import { ColorSplashGame } from './components/ColorSplashGame';
+import { AnimalOrchestraGame } from './components/AnimalOrchestraGame';
+import { SpaceRocketGame } from './components/SpaceRocketGame';
+import { HideAndSeekGame } from './components/HideAndSeekGame';
+import { WordBridgeGame } from './components/WordBridgeGame';
+import { DressUpGame } from './components/DressUpGame';
+import { Taskbar } from './components/Taskbar';
+import { Home } from './components/Home';
+import { Learn as Dictionary } from './components/Learn';
+import { Trophy } from './components/Trophy';
+import { Intro } from './components/Intro';
+import { voiceCoach } from './lib/VoiceCoach';
+
+const LANGUAGES = [
+  { code: 'english', name: 'English', flag: '🇬🇧', color: 'bg-blue-400', shadow: 'shadow-[0_8px_0_rgb(59,130,246)]' },
+  { code: 'dutch', name: 'Dutch', flag: '🇳🇱', color: 'bg-orange-400', shadow: 'shadow-[0_8px_0_rgb(249,115,22)]' },
+  { code: 'norwegian', name: 'Norwegian', flag: '🇳🇴', color: 'bg-red-400', shadow: 'shadow-[0_8px_0_rgb(239,68,68)]' },
+  { code: 'swedish', name: 'Swedish', flag: '🇸🇪', color: 'bg-yellow-400', shadow: 'shadow-[0_8px_0_rgb(234,179,8)]' },
+  { code: 'german', name: 'German', flag: '🇩🇪', color: 'bg-gray-500', shadow: 'shadow-[0_8px_0_rgb(107,114,128)]' },
+];
+
+const GAMES = [
+  { id: 'football', name: 'Word Football', icon: '⚽', color: 'green' },
+  { id: 'fruit', name: 'Fruit Market', icon: '🍎', color: 'red' },
+  { id: 'hungry', name: 'Hungry Dove', icon: '🍞', color: 'yellow' },
+  { id: 'memory', name: 'Memory Clouds', icon: '☁️', color: 'sky' },
+  { id: 'soundpop', name: 'Sound Pop', icon: '🫧', color: 'cyan' },
+  { id: 'dove', name: 'Help Dove Fly', icon: '🕊️', color: 'blue' },
+  { id: 'lion', name: 'Feed the Lion', icon: '🥩', color: 'orange' },
+  { id: 'trace', name: 'Character Trace', icon: '✍️', color: 'yellow' },
+  { id: 'train', name: 'Heritage Train', icon: '🚂', color: 'stone' },
+  { id: 'color', name: 'Color Splash', icon: '🎨', color: 'pink' },
+  { id: 'animal', name: 'Animal Orchestra', icon: '🦒', color: 'emerald' },
+  { id: 'rocket', name: 'Space Rocket', icon: '🚀', color: 'indigo' },
+  { id: 'hide', name: 'Hide & Seek', icon: '🏠', color: 'teal' },
+  { id: 'bridge', name: 'Word Bridge', icon: '🌉', color: 'amber' },
+  { id: 'dressup', name: 'Dress-Up', icon: '👗', color: 'fuchsia' },
+  { id: 'match', name: 'Word Match', icon: '🧩', color: 'purple' },
+];
+
+export default function App() {
+  const [step, setStep] = useState<'intro' | 'name' | 'language' | 'app'>('intro');
+  const [kidName, setKidName] = useState('');
+  const [language, setLanguage] = useState<string | null>(null);
+  const [currentTab, setCurrentTab] = useState('home');
+  const [currentGame, setCurrentGame] = useState<string | null>(null);
+  const [doveCheering, setDoveCheering] = useState(false);
+
+  // Helper to trigger voice messages
+  const setDoveMessage = React.useCallback((msg: string) => {
+    voiceCoach.speak(msg, language || 'english');
+  }, [language]);
+
+  const handleNameSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (kidName.trim()) {
+      voiceCoach.setName(kidName.trim());
+      setStep('language');
+      setDoveMessage(`Hi ${kidName.trim()}! What language do you speak?`);
+    }
+  };
+
+  const handleLanguageSelect = (langCode: string) => {
+    setLanguage(langCode);
+    setStep('app');
+    setDoveMessage(`Great choice, ${kidName.trim()}! Let's start learning. Check out your progress or play a game!`);
+  };
+
+  const renderTabContent = () => {
+    if (currentGame) {
+      const commonProps = {
+        language,
+        onBack: () => {
+          setCurrentGame(null);
+          setDoveMessage(`Welcome back, ${kidName.trim()}! What do you want to play next?`);
+        },
+        setDoveMessage,
+        setDoveCheering
+      };
+
+      // Fallback for unimplemented games
+      const renderPlaceholder = (name: string) => (
+        <div className="w-full h-full flex flex-col items-center justify-center bg-sky-50 p-4">
+          <div className="w-full flex justify-between items-center absolute top-4 left-4 z-10">
+            <button 
+              onClick={commonProps.onBack}
+              className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-md text-xl"
+            >
+              🏠
+            </button>
+          </div>
+          <h2 className="text-3xl font-black text-blue-600 mb-4">{name}</h2>
+          <p className="text-xl font-bold text-gray-500 text-center">Coming soon! Let's play another game.</p>
+        </div>
+      );
+
+      switch (currentGame) {
+        case 'football': return <StadiumGame {...commonProps} />;
+        case 'trace': return <TraceWordGame {...commonProps} />;
+        case 'lion': return <FeedLionGame {...commonProps} />;
+        case 'dove': return <FlyDoveGame {...commonProps} />;
+        case 'match': return <MatchGame {...commonProps} />;
+        case 'memory': return <MemoryMatchGame {...commonProps} />;
+        case 'fruit': return <FruitMarketGame {...commonProps} />;
+        case 'hungry': return <HungryDoveGame {...commonProps} />;
+        case 'soundpop': return <SoundPopGame {...commonProps} />;
+        case 'train': return <HeritageTrainGame {...commonProps} />;
+        case 'color': return <ColorSplashGame {...commonProps} />;
+        case 'animal': return <AnimalOrchestraGame {...commonProps} />;
+        case 'rocket': return <SpaceRocketGame {...commonProps} />;
+        case 'hide': return <HideAndSeekGame {...commonProps} />;
+        case 'bridge': return <WordBridgeGame {...commonProps} />;
+        case 'dressup': return <DressUpGame {...commonProps} />;
+        default: return null;
+      }
+    }
+
+    switch (currentTab) {
+      case 'home':
+        return <Home setCurrentTab={setCurrentTab} />;
+      case 'dictionary':
+        return <Dictionary language={language || 'english'} />;
+      case 'trophy':
+        return <Trophy />;
+      case 'games':
+        return (
+          <div className="w-full h-full p-4 pb-32 flex flex-col items-center justify-start bg-sky-50 overflow-y-auto pt-6">
+            <motion.div 
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-center mb-6"
+            >
+              <h2 className="text-3xl font-black text-green-600 mb-1">Play & Learn!</h2>
+              <p className="text-sm font-bold text-gray-400 uppercase tracking-widest">Choose a Game</p>
+            </motion.div>
+
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 w-full max-w-2xl px-2">
+              {GAMES.map((game) => (
+                <motion.button
+                  key={game.id}
+                  whileHover={{ scale: 1.05, y: -5 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => setCurrentGame(game.id)}
+                  className={`group relative bg-white p-4 rounded-[2rem] shadow-[0_8px_16px_rgba(0,0,0,0.05)] border-4 border-${game.color}-50 flex flex-col items-center justify-center gap-3 transition-all hover:border-${game.color}-400 hover:shadow-[0_12px_24px_rgba(0,0,0,0.1)] h-40`}
+                >
+                  <div className={`bg-${game.color}-400 p-4 rounded-2xl shadow-[0_4px_0_rgb(0,0,0,0.2)] group-hover:scale-110 transition-transform`}>
+                    <span className="text-4xl">{game.icon}</span>
+                  </div>
+                  <div className="text-center">
+                    <span className={`block text-lg font-black text-${game.color}-600 leading-tight`}>{game.name}</span>
+                  </div>
+                </motion.button>
+              ))}
+            </div>
+          </div>
+        );
+      default:
+        return <Home setCurrentTab={setCurrentTab} />;
+    }
+  };
+
+  return (
+    <div className="w-full h-screen bg-sky-200 overflow-hidden font-sans selection:bg-yellow-300 relative">
+      <AnimatePresence mode="wait">
+        {step === 'intro' && (
+          <Intro key="intro" onStart={() => {
+            setStep('name');
+            setDoveMessage("Hi! What's your name?");
+          }} />
+        )}
+
+        {step === 'name' && (
+          <motion.div 
+            key="name-step"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, y: -50 }}
+            className="flex flex-col items-center justify-center h-full p-6 max-h-[80vh] m-auto"
+          >
+            <DoveMascot isCheering={doveCheering} />
+            <div className="bg-white/90 backdrop-blur-sm p-8 rounded-[2rem] shadow-xl border-4 border-white w-full max-w-[85%] text-center mt-4">
+              <h1 className="text-3xl font-black text-blue-500 mb-6">What's your name?</h1>
+              <form onSubmit={handleNameSubmit} className="flex flex-col gap-4">
+                <input 
+                  type="text" 
+                  value={kidName}
+                  onChange={(e) => setKidName(e.target.value)}
+                  placeholder="Your Name"
+                  className="w-full text-center text-2xl font-bold p-4 rounded-2xl border-4 border-blue-100 outline-none focus:border-blue-400 transition-colors"
+                  autoFocus
+                />
+                <button 
+                  type="submit"
+                  disabled={!kidName.trim()}
+                  className="bg-yellow-400 text-yellow-900 text-2xl font-black py-4 rounded-2xl shadow-[0_6px_0_rgb(202,138,4)] active:translate-y-1 active:shadow-none disabled:opacity-50 transition-all w-full"
+                >
+                  Next
+                </button>
+              </form>
+            </div>
+          </motion.div>
+        )}
+
+        {step === 'language' && (
+          <motion.div 
+            key="language-step"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, y: -50 }}
+            className="flex flex-col items-center justify-center h-full p-6 overflow-y-auto max-h-[80vh] m-auto"
+          >
+            <DoveMascot isCheering={doveCheering} />
+            <div className="bg-white/90 backdrop-blur-sm p-8 rounded-[2rem] shadow-xl border-4 border-white w-full max-w-[85%] text-center mt-4">
+              <h1 className="text-3xl font-black text-blue-500 mb-6">What language do you speak?</h1>
+              <div className="flex flex-col gap-4">
+                {LANGUAGES.map((lang) => (
+                  <motion.button
+                    key={lang.code}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => handleLanguageSelect(lang.code)}
+                    className={`${lang.color} ${lang.shadow} text-white text-xl font-black py-4 px-6 rounded-2xl flex items-center justify-start gap-4 border-2 border-white/30 active:translate-y-1 active:shadow-none transition-all w-full`}
+                  >
+                    <span className="text-3xl">{lang.flag}</span>
+                    {lang.name}
+                  </motion.button>
+                ))}
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {step === 'app' && (
+          <motion.div 
+            key="app-content"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="w-full h-full relative"
+          >
+            {!currentGame && <DoveMascot isCheering={doveCheering} />}
+
+            <motion.div
+              key="main-app"
+              initial={{ opacity: 0, y: 50 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="h-full w-full"
+            >
+              {renderTabContent()}
+              {!currentGame && (
+                <Taskbar currentTab={currentTab} setCurrentTab={(tab) => {
+                  setCurrentTab(tab);
+                  if (tab === 'home') setDoveMessage(`Welcome home, ${kidName.trim()}!`);
+                  if (tab === 'dictionary') setDoveMessage(`Let's learn new words, ${kidName.trim()}!`);
+                  if (tab === 'games') setDoveMessage(`Time to play, ${kidName.trim()}!`);
+                  if (tab === 'trophy') setDoveMessage(`Look at your progress, ${kidName.trim()}!`);
+                }} />
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}

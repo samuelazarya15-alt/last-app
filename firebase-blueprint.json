@@ -1,0 +1,42 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile and progress",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "name": { "type": "string" },
+        "language": { "type": "string" },
+        "stars": { "type": "number" },
+        "level": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "name", "language", "stars", "level", "createdAt"]
+    },
+    "GameSession": {
+      "title": "GameSession",
+      "description": "A single game session played by a user",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "gameId": { "type": "string" },
+        "score": { "type": "number" },
+        "duration": { "type": "number" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "gameId", "score", "duration", "timestamp"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "User profiles"
+    },
+    "/sessions/{sessionId}": {
+      "schema": { "$ref": "#/entities/GameSession" },
+      "description": "Game sessions"
+    }
+  }
+}
