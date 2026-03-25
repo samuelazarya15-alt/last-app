@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { voiceCoach } from '../lib/VoiceCoach';
 import { Volume2, VolumeX } from 'lucide-react';
 
-export function DoveMascot({ isCheering }: { isCheering?: boolean }) {
+export function DoveMascot({ isCheering, size = "12vh", relative = false }: { isCheering?: boolean, size?: string, relative?: boolean }) {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isMuted, setIsMuted] = useState(voiceCoach.getIsMuted());
 
@@ -17,19 +17,19 @@ export function DoveMascot({ isCheering }: { isCheering?: boolean }) {
   };
 
   return (
-    <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-40 flex flex-col items-center gap-2 pointer-events-none w-full max-w-[120px] mt-4">
+    <div className={`${relative ? 'relative top-0 left-0 transform-none mt-0' : 'absolute top-4 left-1/2 transform -translate-x-1/2 mt-4'} z-40 flex flex-col items-center gap-2 pointer-events-none w-full max-w-[120px]`}>
       <button 
         onClick={toggleMute}
-        className="bg-white/80 backdrop-blur p-2 rounded-full shadow-md text-blue-500 hover:bg-white transition-colors border-2 border-blue-100 pointer-events-auto absolute -right-12 top-0 min-w-[50px] min-h-[50px] flex items-center justify-center"
+        className={`bg-white/80 backdrop-blur p-2 rounded-full shadow-md text-blue-500 hover:bg-white transition-colors border-2 border-blue-100 pointer-events-auto absolute ${relative ? '-left-12' : '-left-16'} top-0 min-w-[44px] min-h-[44px] flex items-center justify-center`}
         title={isMuted ? "Unmute Voice" : "Mute Voice"}
       >
-        {isMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
+        {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
       </button>
       
       <div className="pointer-events-none w-full flex justify-center">
         <motion.div 
           className="relative flex items-center justify-center w-full"
-          style={{ maxHeight: '20vh' }}
+          style={{ maxHeight: size }}
           animate={
             isCheering 
               ? { y: [0, -15, 0], rotate: [0, -10, 10, 0], scale: [1, 1.1, 1] } 
@@ -46,7 +46,8 @@ export function DoveMascot({ isCheering }: { isCheering?: boolean }) {
           <img 
             src="https://em-content.zobj.net/source/apple/354/dove_1f54a-fe0f.png" 
             alt="3D Dove Mascot" 
-            className="h-[20vh] w-auto max-w-full object-contain drop-shadow-2xl"
+            className="w-auto max-w-full object-contain drop-shadow-2xl"
+            style={{ height: size }}
           />
           
           {/* Speaking Indicator */}

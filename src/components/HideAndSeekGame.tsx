@@ -75,6 +75,7 @@ export function HideAndSeekGame({ language, onBack, setDoveMessage, setDoveCheer
       // Correct
       setIsAnimating(true);
       setDoveCheering(true);
+      voiceCoach.playSfx('score');
       setScore(s => s + 10);
       
       confetti({
@@ -98,6 +99,7 @@ export function HideAndSeekGame({ language, onBack, setDoveMessage, setDoveCheer
 
     } else {
       // Incorrect
+      voiceCoach.playSfx('wrong');
       voiceCoach.speak("Not quite! Keep looking!", language || 'english');
       setDoveMessage("Not quite! Keep looking!");
     }
@@ -106,23 +108,23 @@ export function HideAndSeekGame({ language, onBack, setDoveMessage, setDoveCheer
   if (gameOver) {
     return (
       <div className="w-full h-full flex flex-col items-center justify-center bg-sky-50 p-4">
-        <h2 className="text-base font-black text-blue-600 mb-4">Game Over!</h2>
-        <p className="text-sm font-bold text-gray-700 mb-8">Score: {score}</p>
+        <h2 className="text-xl font-black text-blue-600 mb-4">Game Over!</h2>
+        <p className="text-base font-bold text-gray-700 mb-8">Score: {score}</p>
         <div className="flex gap-4">
           <button 
             onClick={() => {
               setScore(0);
               setLevel(1);
               setGameOver(false);
-              spawnNextRound();
+              spawnNextRound(1);
             }}
-            className="bg-green-500 text-white px-8 py-4 rounded-2xl font-black text-sm shadow-[0_6px_0_rgb(21,128,61)] active:translate-y-1 active:shadow-none"
+            className="bg-green-500 text-white px-8 py-4 rounded-2xl font-black text-base shadow-[0_6px_0_rgb(21,128,61)] active:translate-y-1 active:shadow-none"
           >
             Play Again
           </button>
           <button 
             onClick={onBack}
-            className="bg-gray-400 text-white px-8 py-4 rounded-2xl font-black text-sm shadow-[0_6px_0_rgb(107,114,128)] active:translate-y-1 active:shadow-none"
+            className="bg-gray-400 text-white px-8 py-4 rounded-2xl font-black text-base shadow-[0_6px_0_rgb(107,114,128)] active:translate-y-1 active:shadow-none"
           >
             Back to Games
           </button>
@@ -136,15 +138,15 @@ export function HideAndSeekGame({ language, onBack, setDoveMessage, setDoveCheer
       <div className="w-full flex justify-between items-center z-10 mb-4">
         <button 
           onClick={onBack}
-          className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-md text-sm"
+          className="w-14 h-14 bg-white rounded-full flex items-center justify-center shadow-md text-xl"
         >
           🏠
         </button>
         <div className="flex gap-4">
-          <div className="bg-white px-4 py-2 rounded-2xl shadow-sm font-bold text-amber-600 text-sm">
+          <div className="bg-white px-4 py-2 rounded-2xl shadow-sm font-bold text-amber-600 text-base">
             Level {level}
           </div>
-          <div className="bg-white px-4 py-2 rounded-2xl shadow-sm font-bold text-green-600 text-sm">
+          <div className="bg-white px-4 py-2 rounded-2xl shadow-sm font-bold text-green-600 text-base">
             Score: {score}
           </div>
         </div>
@@ -157,7 +159,7 @@ export function HideAndSeekGame({ language, onBack, setDoveMessage, setDoveCheer
       </div>
 
       <div className="bg-white/90 backdrop-blur-sm p-4 rounded-2xl shadow-md border-2 border-white text-center mb-4 z-10">
-        <h2 className="text-base font-black text-amber-600">
+        <h2 className="text-xl font-black text-amber-600">
           Find: {targetWord?.translations[language as keyof typeof targetWord.translations] || targetWord?.english}
         </h2>
       </div>

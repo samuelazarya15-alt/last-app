@@ -5,3 +5,11 @@
   --font-sans: "Quicksand", ui-sans-serif, system-ui, sans-serif;
   --font-geez: "Noto Sans Ethiopic", ui-sans-serif, system-ui, sans-serif;
 }
+
+@utility no-scrollbar {
+  &::-webkit-scrollbar {
+    display: none;
+  }
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

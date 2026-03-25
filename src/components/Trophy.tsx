@@ -52,7 +52,7 @@ export function Trophy() {
 
   return (
     <div className="w-full h-full flex flex-col p-6 bg-sky-50 pb-8 pt-[28vh] overflow-y-auto">
-      <h2 className="text-base font-black text-purple-600 mb-8 text-center tracking-tight">Your Progress</h2>
+      <h2 className="text-xl font-black text-purple-600 mb-8 text-center tracking-tight">Your Progress</h2>
       
       {/* Header Stats */}
       <div className="grid grid-cols-3 gap-4 mb-8">
@@ -63,7 +63,7 @@ export function Trophy() {
           <div className="bg-orange-50 p-3 rounded-2xl mb-3">
             <Flame className="text-orange-500" size={32} strokeWidth={3} fill="currentColor" />
           </div>
-          <span className="text-base font-black text-gray-800">{stats?.streak || 0}</span>
+          <span className="text-xl font-black text-gray-800">{stats?.streak || 0}</span>
           <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Streak</span>
         </motion.div>
 
@@ -74,7 +74,7 @@ export function Trophy() {
           <div className="bg-yellow-50 p-3 rounded-2xl mb-3">
             <Coins className="text-yellow-500" size={32} strokeWidth={3} fill="currentColor" />
           </div>
-          <span className="text-base font-black text-gray-800">{stats?.coins || 0}</span>
+          <span className="text-xl font-black text-gray-800">{stats?.coins || 0}</span>
           <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Coins</span>
         </motion.div>
 
@@ -85,7 +85,7 @@ export function Trophy() {
           <div className="bg-blue-50 p-3 rounded-2xl mb-3">
             <BookOpen className="text-blue-500" size={32} strokeWidth={3} fill="currentColor" />
           </div>
-          <span className="text-base font-black text-gray-800">{Math.min(100, Math.floor((stats?.total_xp || 0) / 100))}%</span>
+          <span className="text-xl font-black text-gray-800">{Math.min(100, Math.floor((stats?.total_xp || 0) / 100))}%</span>
           <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Mastery</span>
         </motion.div>
       </div>
@@ -99,11 +99,11 @@ export function Trophy() {
         <div className="absolute -right-4 -top-4 text-8xl opacity-10">🌟</div>
         <div className="flex justify-between items-end mb-4">
           <div>
-            <h3 className="text-sm font-black text-gray-400 uppercase tracking-widest mb-1">Level {stats?.level || 1}</h3>
-            <p className="text-base font-black text-blue-500">Explorer</p>
+            <h3 className="text-base font-black text-gray-400 uppercase tracking-widest mb-1">Level {stats?.level || 1}</h3>
+            <p className="text-lg font-black text-blue-500">Explorer</p>
           </div>
           <div className="text-right">
-            <span className="text-base font-black text-gray-800">{(stats?.total_xp || 0) % 1000}</span>
+            <span className="text-lg font-black text-gray-800">{(stats?.total_xp || 0) % 1000}</span>
             <span className="text-[10px] font-black text-gray-400 uppercase ml-1">/ 1000 XP</span>
           </div>
         </div>
@@ -128,7 +128,7 @@ export function Trophy() {
           <div className="bg-purple-50 p-2 rounded-xl">
             <History className="text-purple-500" size={24} strokeWidth={3} />
           </div>
-          <h3 className="text-sm font-black text-gray-800 uppercase tracking-widest">Recent Performance</h3>
+          <h3 className="text-base font-black text-gray-800 uppercase tracking-widest">Recent Performance</h3>
         </div>
         <div className="h-64 w-full">
           <ResponsiveContainer width="100%" height="100%">
@@ -138,7 +138,7 @@ export function Trophy() {
                 dataKey="name" 
                 axisLine={false} 
                 tickLine={false} 
-                tick={{ fill: '#9ca3af', fontWeight: 800, fontSize: 12 }}
+                tick={{ fill: '#9ca3af', fontWeight: 800, fontSize: 14 }}
               />
               <YAxis hide />
               <Tooltip 
@@ -172,7 +172,7 @@ export function Trophy() {
             <div className="bg-red-50 p-2 rounded-xl">
               <Target className="text-red-500" size={24} strokeWidth={3} />
             </div>
-            <h3 className="text-sm font-black text-gray-800 uppercase tracking-widest">Your Goals</h3>
+            <h3 className="text-base font-black text-gray-800 uppercase tracking-widest">Your Goals</h3>
           </div>
           <motion.button
             whileHover={{ scale: 1.05 }}
@@ -187,17 +187,17 @@ export function Trophy() {
         <div className="space-y-6">
           {goals.length === 0 ? (
             <div className="text-center py-8">
-              <p className="text-gray-300 font-black text-sm mb-2">No goals set yet! 🎯</p>
-              <p className="text-gray-400 font-bold text-[10px]">Add one to stay motivated!</p>
+              <p className="text-gray-300 font-black text-base mb-2">No goals set yet! 🎯</p>
+              <p className="text-gray-400 font-bold text-sm">Add one to stay motivated!</p>
             </div>
           ) : (
             goals.map((goal, index) => (
               <div key={index} className="bg-gray-50 p-6 rounded-[2rem] border-4 border-gray-100 shadow-inner">
                 <div className="flex justify-between items-center mb-4">
-                  <span className="font-black text-gray-700 text-sm capitalize tracking-tight">
+                  <span className="font-black text-gray-700 text-base capitalize tracking-tight">
                     {goal.type.replace('_', ' ')}
                   </span>
-                  <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                  <span className="text-sm font-black text-gray-400 uppercase tracking-widest">
                     {goal.current} / {goal.target}
                   </span>
                 </div>
@@ -231,8 +231,8 @@ export function Trophy() {
               exit={{ scale: 0.9, y: 20, opacity: 0 }}
               className="relative bg-white rounded-[3rem] p-10 w-full max-w-sm shadow-2xl border-4 border-blue-50"
             >
-              <h3 className="text-base font-black text-gray-800 mb-2 text-center">Set a New Goal</h3>
-              <p className="text-gray-400 font-bold text-center mb-8 text-sm">Choose your next challenge!</p>
+              <h3 className="text-lg font-black text-gray-800 mb-2 text-center">Set a New Goal</h3>
+              <p className="text-gray-400 font-bold text-center mb-8 text-base">Choose your next challenge!</p>
               
               <div className="grid grid-cols-1 gap-4">
                 <motion.button 
@@ -241,8 +241,8 @@ export function Trophy() {
                   onClick={() => handleAddGoal('daily_xp', 500)}
                   className="p-6 bg-orange-50 border-4 border-orange-100 rounded-[2rem] text-left hover:border-orange-400 transition-all group"
                 >
-                  <div className="font-black text-orange-600 text-sm mb-1 group-hover:text-orange-700">Daily XP Master</div>
-                  <div className="text-[10px] text-orange-400 font-bold">Earn 500 XP in 24 hours</div>
+                  <div className="font-black text-orange-600 text-base mb-1 group-hover:text-orange-700">Daily XP Master</div>
+                  <div className="text-sm text-orange-400 font-bold">Earn 500 XP in 24 hours</div>
                 </motion.button>
                 
                 <motion.button 
@@ -251,15 +251,15 @@ export function Trophy() {
                   onClick={() => handleAddGoal('games_played', 5)}
                   className="p-6 bg-blue-50 border-4 border-blue-100 rounded-[2rem] text-left hover:border-blue-400 transition-all group"
                 >
-                  <div className="font-black text-blue-600 text-sm mb-1 group-hover:text-blue-700">Game Enthusiast</div>
-                  <div className="text-[10px] text-blue-400 font-bold">Play 5 games today</div>
+                  <div className="font-black text-blue-600 text-base mb-1 group-hover:text-blue-700">Game Enthusiast</div>
+                  <div className="text-sm text-blue-400 font-bold">Play 5 games today</div>
                 </motion.button>
                 
                 <motion.button 
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={() => setShowGoalModal(false)}
-                  className="mt-4 w-full py-4 bg-gray-100 text-gray-500 font-black rounded-[1.5rem] hover:bg-gray-200 transition-colors text-sm"
+                  className="mt-4 w-full py-4 bg-gray-100 text-gray-500 font-black rounded-[1.5rem] hover:bg-gray-200 transition-colors text-base"
                 >
                   CANCEL
                 </motion.button>

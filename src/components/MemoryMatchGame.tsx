@@ -4,6 +4,7 @@ import confetti from 'canvas-confetti';
 import WORDS from '../data/words.json';
 import { GameTimer } from './GameTimer';
 import { logGameSession } from '../lib/progress';
+import { voiceCoach } from '../lib/VoiceCoach';
 
 interface Card {
   id: number;
@@ -79,6 +80,7 @@ export function MemoryMatchGame({ language, onBack, setDoveMessage, setDoveCheer
   const handleCardClick = (index: number) => {
     if (isAnimating || cards[index].isFlipped || cards[index].isMatched || flippedIndices.length === 2) return;
 
+    voiceCoach.playSfx('pop');
     const newFlipped = [...flippedIndices, index];
     setFlippedIndices(newFlipped);
 
@@ -95,6 +97,7 @@ export function MemoryMatchGame({ language, onBack, setDoveMessage, setDoveCheer
       if (firstCard.wordId === secondCard.wordId) {
         // Match!
         setTimeout(() => {
+          voiceCoach.playSfx('score');
           const matchedCards = [...newCards];
           matchedCards[firstIndex].isMatched = true;
           matchedCards[secondIndex].isMatched = true;
@@ -109,6 +112,7 @@ export function MemoryMatchGame({ language, onBack, setDoveMessage, setDoveCheer
 
           if (matches + 1 === pairsCount) {
             // Level complete
+            voiceCoach.playSfx('success');
             confetti({
               particleCount: 100,
               spread: 70,
@@ -123,6 +127,7 @@ export function MemoryMatchGame({ language, onBack, setDoveMessage, setDoveCheer
       } else {
         // No match
         setTimeout(() => {
+          voiceCoach.playSfx('wrong');
           const resetCards = [...newCards];
           resetCards[firstIndex].isFlipped = false;
           resetCards[secondIndex].isFlipped = false;
@@ -139,16 +144,16 @@ export function MemoryMatchGame({ language, onBack, setDoveMessage, setDoveCheer
       <div className="w-full flex justify-between items-center z-10 mb-2 mt-2">
         <button 
           onClick={onBack}
-          className="bg-white/90 px-4 py-2 rounded-full font-black text-purple-600 shadow-[0_4px_0_rgb(147,51,234)] active:translate-y-1 active:shadow-[0_0px_0_rgb(147,51,234)] transition-all text-sm border-2 border-purple-200"
+          className="bg-white/90 px-4 py-2 rounded-full font-black text-purple-600 shadow-[0_4px_0_rgb(147,51,234)] active:translate-y-1 active:shadow-[0_0px_0_rgb(147,51,234)] transition-all text-base border-2 border-purple-200"
         >
           ← Back
         </button>
 
         <div className="flex gap-2">
-          <div className="bg-purple-400 px-3 py-1 rounded-full font-black text-white shadow-[0_4px_0_rgb(147,51,234)] text-sm border-2 border-purple-300">
+          <div className="bg-purple-400 px-3 py-1 rounded-full font-black text-white shadow-[0_4px_0_rgb(147,51,234)] text-base border-2 border-purple-300">
             Lvl {level}
           </div>
-          <div className="bg-yellow-400 px-3 py-1 rounded-full font-black text-yellow-900 shadow-[0_4px_0_rgb(202,138,4)] text-sm border-2 border-yellow-300">
+          <div className="bg-yellow-400 px-3 py-1 rounded-full font-black text-yellow-900 shadow-[0_4px_0_rgb(202,138,4)] text-base border-2 border-yellow-300">
             {score} pt
           </div>
         </div>
@@ -192,7 +197,7 @@ export function MemoryMatchGame({ language, onBack, setDoveMessage, setDoveCheer
                 className="absolute inset-0 bg-white rounded-xl border-4 border-purple-300 shadow-md flex items-center justify-center p-2 text-center"
                 style={{ backfaceVisibility: "hidden", transform: "rotateY(180deg)" }}
               >
-                <span className={`font-black ${card.type === 'native' ? 'text-base text-purple-800' : 'text-sm text-blue-600'}`}>
+                <span className={`font-black ${card.type === 'native' ? 'text-lg text-purple-800' : 'text-base text-blue-600'}`}>
                   {card.text}
                 </span>
               </div>

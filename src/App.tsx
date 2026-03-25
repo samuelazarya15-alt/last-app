@@ -22,12 +22,15 @@ import { SpaceRocketGame } from './components/SpaceRocketGame';
 import { HideAndSeekGame } from './components/HideAndSeekGame';
 import { WordBridgeGame } from './components/WordBridgeGame';
 import { DressUpGame } from './components/DressUpGame';
+import { GeezGravityGame } from './components/GeezGravityGame';
 import { Taskbar } from './components/Taskbar';
+import { SettingsModal } from './components/SettingsModal';
 import { Home } from './components/Home';
-import { Learn as Dictionary } from './components/Learn';
+import { Learn } from './components/Learn';
 import { Trophy } from './components/Trophy';
 import { Intro } from './components/Intro';
 import { voiceCoach } from './lib/VoiceCoach';
+import { Settings, ArrowLeft, Home as HomeIcon, BookOpen, Trophy as TrophyIcon, Play } from 'lucide-react';
 
 const LANGUAGES = [
   { code: 'english', name: 'English', flag: '🇬🇧', color: 'bg-blue-400', shadow: 'shadow-[0_8px_0_rgb(59,130,246)]' },
@@ -68,6 +71,7 @@ const GAMES = [
   { id: 'shapes', name: 'Shape Sorter', icon: '🔺', color: 'purple', world: 'brain' },
   { id: 'bridge', name: 'Word Bridge', icon: '🌉', color: 'amber', world: 'brain' },
   { id: 'clock', name: 'Clock Tower', icon: '🕰️', color: 'stone', world: 'brain' },
+  { id: 'geezgravity', name: "Ge'ez Gravity", icon: '☄️', color: 'indigo', world: 'brain' },
   { id: 'trace', name: 'Character Trace', icon: '✍️', color: 'yellow', world: 'brain' },
   { id: 'color', name: 'Color Splash', icon: '🎨', color: 'pink', world: 'brain' },
   { id: 'hide', name: 'Hide & Seek', icon: '🏠', color: 'teal', world: 'brain' },
@@ -86,11 +90,12 @@ export default function App() {
   const [step, setStep] = useState<'intro' | 'name' | 'language' | 'app'>('intro');
   const [kidName, setKidName] = useState('');
   const [language, setLanguage] = useState<string | null>(null);
-  const [currentTab, setCurrentTab] = useState('home');
+  const [currentTab, setCurrentTab] = useState('games');
   const [currentWorld, setCurrentWorld] = useState<string | null>(null);
   const [currentGame, setCurrentGame] = useState<string | null>(null);
   const [doveCheering, setDoveCheering] = useState(false);
   const [stars, setStars] = useState(0);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   useEffect(() => {
     if (step === 'app') {
@@ -167,54 +172,49 @@ export default function App() {
         case 'hide': return <HideAndSeekGame {...commonProps} />;
         case 'bridge': return <WordBridgeGame {...commonProps} />;
         case 'dressup': return <DressUpGame {...commonProps} />;
-        default: return null;
+        case 'geezgravity': return <GeezGravityGame {...commonProps} />;
+        default: {
+          const game = GAMES.find(g => g.id === currentGame);
+          return renderPlaceholder(game?.name || 'Game');
+        }
       }
     }
 
     switch (currentTab) {
-      case 'home':
-        return <Home setCurrentTab={setCurrentTab} setCurrentWorld={setCurrentWorld} />;
-      case 'dictionary':
-        return <Dictionary language={language || 'english'} />;
+      case 'learn':
+        return <Learn language={language || 'english'} />;
       case 'trophy':
         return <Trophy />;
       case 'games':
-        const filteredGames = currentWorld ? GAMES.filter(g => g.world === currentWorld) : GAMES;
         return (
-          <div className="w-full h-full p-4 pb-8 flex flex-col items-center justify-start bg-sky-50 overflow-y-auto pt-[28vh]">
+          <div className="w-full h-full p-4 pb-12 flex flex-col items-center justify-start bg-sky-50 overflow-y-auto pt-[12vh]">
             <motion.div 
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="text-center mb-6 flex flex-col items-center"
+              className="text-center mb-10 flex flex-col items-center"
             >
-              {currentWorld && (
-                <button 
-                  onClick={() => setCurrentTab('home')}
-                  className="mb-2 text-blue-500 font-bold flex items-center justify-center gap-2 min-w-[50px] min-h-[50px] px-4 rounded-full hover:bg-blue-50 transition-colors text-sm"
-                >
-                  ← Back to Worlds
-                </button>
-              )}
-              <h2 className="text-base font-black text-green-600 mb-1">
-                {currentWorld ? WORLDS.find(w => w.id === currentWorld)?.name : 'Play & Learn!'}
+              <h2 className="text-4xl font-black text-blue-600 mb-2 drop-shadow-sm">
+                Let's Play!
               </h2>
-              <p className="text-sm font-bold text-gray-400 uppercase tracking-widest">Choose a Game</p>
+              <p className="text-lg font-bold text-gray-400 uppercase tracking-widest">Pick a Game</p>
             </motion.div>
 
-            <div className="grid grid-cols-4 gap-8 w-full max-w-4xl px-2">
-              {filteredGames.map((game) => (
+            <div className="grid grid-cols-3 gap-6 w-full max-w-4xl px-4">
+              {GAMES.map((game) => (
                 <motion.button
                   key={game.id}
                   whileHover={{ scale: 1.05, y: -5 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => setCurrentGame(game.id)}
-                  className={`group relative bg-white p-2 rounded-2xl shadow-sm border-2 border-${game.color}-50 flex flex-col items-center justify-center gap-2 transition-all hover:border-${game.color}-400 hover:shadow-md w-full aspect-square`}
+                  className={`group relative bg-white p-4 rounded-[2rem] shadow-lg border-4 border-${game.color}-50 flex flex-col items-center justify-center gap-4 transition-all hover:border-${game.color}-400 hover:shadow-2xl w-full aspect-square`}
                 >
-                  <div className={`bg-${game.color}-400 w-[48px] h-[48px] rounded-xl shadow-sm group-hover:scale-110 transition-transform flex items-center justify-center`}>
-                    <span className="text-2xl">{game.icon}</span>
+                  <div className={`bg-${game.color}-400 w-[72px] h-[72px] rounded-2xl shadow-sm group-hover:scale-110 group-hover:rotate-3 transition-transform flex items-center justify-center`}>
+                    <span className="text-5xl">{game.icon}</span>
                   </div>
                   <div className="text-center px-1">
-                    <span className={`block text-[10px] font-black text-${game.color}-600 leading-tight line-clamp-2`}>{game.name}</span>
+                    <span className={`block text-sm font-black text-${game.color}-700 leading-tight tracking-tight`}>
+                      {game.name}
+                    </span>
                   </div>
                 </motion.button>
               ))}
@@ -222,7 +222,7 @@ export default function App() {
           </div>
         );
       default:
-        return <Home setCurrentTab={setCurrentTab} setCurrentWorld={setCurrentWorld} />;
+        return <Learn language={language || 'english'} />;
     }
   };
 
@@ -244,22 +244,22 @@ export default function App() {
             exit={{ opacity: 0, y: -50 }}
             className="flex flex-col items-center justify-center h-full p-6 max-h-[80vh] m-auto gap-8"
           >
-            <DoveMascot isCheering={doveCheering} />
+            <DoveMascot isCheering={doveCheering} size="15vh" />
             <div className="bg-white/90 backdrop-blur-sm p-8 rounded-[2rem] shadow-xl border-4 border-white w-full max-w-[85%] text-center mt-4">
-              <h1 className="text-base font-black text-blue-500 mb-6">What's your name?</h1>
+              <h1 className="text-xl font-black text-blue-500 mb-6">What's your name?</h1>
               <form onSubmit={handleNameSubmit} className="flex flex-col gap-8">
                 <input 
                   type="text" 
                   value={kidName}
                   onChange={(e) => setKidName(e.target.value)}
                   placeholder="Your Name"
-                  className="w-full text-center text-base font-bold p-4 rounded-2xl border-4 border-blue-100 outline-none focus:border-blue-400 transition-colors"
+                  className="w-full text-center text-xl font-bold p-4 rounded-2xl border-4 border-blue-100 outline-none focus:border-blue-400 transition-colors"
                   autoFocus
                 />
                 <button 
                   type="submit"
                   disabled={!kidName.trim()}
-                  className="bg-yellow-400 text-yellow-900 text-base font-black py-4 rounded-2xl shadow-[0_6px_0_rgb(202,138,4)] active:translate-y-1 active:shadow-none disabled:opacity-50 transition-all w-full"
+                  className="bg-yellow-400 text-yellow-900 text-xl font-black py-4 rounded-2xl shadow-[0_6px_0_rgb(202,138,4)] active:translate-y-1 active:shadow-none disabled:opacity-50 transition-all w-full"
                 >
                   Next
                 </button>
@@ -276,9 +276,9 @@ export default function App() {
             exit={{ opacity: 0, y: -50 }}
             className="flex flex-col items-center justify-center h-full p-6 overflow-y-auto max-h-[80vh] m-auto"
           >
-            <DoveMascot isCheering={doveCheering} />
+            <DoveMascot isCheering={doveCheering} size="15vh" />
             <div className="bg-white/90 backdrop-blur-sm p-8 rounded-[2rem] shadow-xl border-4 border-white w-full max-w-[85%] text-center mt-4">
-              <h1 className="text-base font-black text-blue-500 mb-6">What language do you speak?</h1>
+              <h1 className="text-xl font-black text-blue-500 mb-6">What language do you speak?</h1>
               <div className="flex flex-col gap-4">
                 {LANGUAGES.map((lang) => (
                   <motion.button
@@ -286,9 +286,9 @@ export default function App() {
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                     onClick={() => handleLanguageSelect(lang.code)}
-                    className={`${lang.color} ${lang.shadow} text-white text-sm font-black py-4 px-6 rounded-2xl flex items-center justify-start gap-4 border-2 border-white/30 active:translate-y-1 active:shadow-none transition-all w-full`}
+                    className={`${lang.color} ${lang.shadow} text-white text-lg font-black py-4 px-6 rounded-2xl flex items-center justify-start gap-4 border-2 border-white/30 active:translate-y-1 active:shadow-none transition-all w-full`}
                   >
-                    <span className="text-2xl">{lang.flag}</span>
+                    <span className="text-3xl">{lang.flag}</span>
                     {lang.name}
                   </motion.button>
                 ))}
@@ -304,40 +304,38 @@ export default function App() {
             animate={{ opacity: 1 }}
             className="w-full h-screen flex flex-col bg-sky-50 overflow-hidden"
           >
-            {/* Top Header (15vh) */}
-            <div className="h-[15vh] shrink-0 bg-white/80 backdrop-blur-md shadow-sm z-50 flex items-center justify-between px-6">
-              <div className="flex items-center gap-4">
-                <div className="w-[10vh] h-[10vh] min-w-[50px] min-h-[50px] bg-blue-100 rounded-full flex items-center justify-center text-xl font-bold text-blue-600">
+            {/* Top Header (10vh) */}
+            <div className="h-[10vh] shrink-0 bg-white/80 backdrop-blur-md shadow-sm z-50 flex items-center justify-between px-4 relative">
+              <div className="flex items-center gap-2">
+                <div className="w-[6vh] h-[6vh] min-w-[40px] min-h-[40px] bg-blue-100 rounded-full flex items-center justify-center text-xl font-bold text-blue-600 border-2 border-white shadow-sm">
                   {kidName.charAt(0).toUpperCase()}
                 </div>
-                <span className="font-black text-gray-700 text-base">{kidName}</span>
+                <span className="font-black text-gray-700 text-sm hidden xs:block truncate max-w-[80px]">{kidName}</span>
               </div>
-              <div className="flex items-center gap-6">
-                <button 
-                  onClick={() => {
-                    setCurrentGame(null);
-                    setCurrentTab('trophy');
-                  }}
-                  className="flex items-center gap-2 bg-yellow-100 px-4 py-2 rounded-full hover:scale-105 transition-transform"
-                >
+
+              {/* Centered Dove Mascot */}
+              <div className="absolute left-1/2 transform -translate-x-1/2 h-full flex items-center justify-center pointer-events-none">
+                <div className="pointer-events-auto">
+                  <DoveMascot relative size="7vh" isCheering={doveCheering} />
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1.5 bg-yellow-100 px-3 py-1.5 rounded-full border-2 border-white shadow-sm">
                   <span className="text-yellow-500 text-xl">⭐</span>
-                  <span className="font-black text-yellow-600 text-base">{stars}</span>
-                </button>
+                  <span className="font-black text-yellow-600 text-sm">{stars}</span>
+                </div>
                 <button 
-                  onClick={() => {
-                    setCurrentGame(null);
-                    setCurrentTab('dictionary');
-                  }}
-                  className="w-[10vh] h-[10vh] min-w-[50px] min-h-[50px] bg-blue-500 text-white rounded-full flex items-center justify-center shadow-sm hover:scale-105 transition-transform text-xl"
+                  onClick={() => setIsSettingsOpen(true)}
+                  className="w-10 h-10 bg-gray-100 text-gray-600 rounded-full flex items-center justify-center shadow-sm hover:scale-105 transition-transform border-2 border-white"
                 >
-                  📖
+                  <Settings size={20} />
                 </button>
               </div>
             </div>
 
-            {/* Play Arena (65vh) */}
-            <div className="h-[65vh] relative w-full overflow-hidden">
-              {!currentGame && <DoveMascot isCheering={doveCheering} />}
+            {/* Play Arena (78vh) */}
+            <div className="h-[78vh] relative w-full overflow-hidden">
               <motion.div
                 key="main-app"
                 initial={{ opacity: 0, y: 50 }}
@@ -348,33 +346,70 @@ export default function App() {
               </motion.div>
             </div>
 
-            {/* Bottom Navigation (20vh) */}
-            <div className="h-[20vh] shrink-0 w-full bg-white/90 backdrop-blur-md border-t-4 border-gray-100 flex items-center justify-center gap-8 px-6 z-50">
+            {/* Bottom Navigation (12vh) */}
+            <div className="h-[12vh] shrink-0 w-full bg-white/90 backdrop-blur-md border-t-4 border-gray-100 flex items-center justify-center gap-3 px-4 z-50">
               <button 
                 onClick={() => {
                   if (currentGame) {
                     setCurrentGame(null);
-                  } else if (currentTab === 'games' && currentWorld) {
-                    setCurrentWorld(null);
                   } else {
-                    setCurrentTab('home');
+                    setCurrentTab('games');
                   }
                 }}
-                className="flex-1 max-w-[200px] h-[10vh] min-h-[64px] bg-gray-200 text-gray-600 rounded-[2rem] font-black text-base flex items-center justify-center shadow-sm hover:bg-gray-300 transition-colors"
+                className="flex-1 max-w-[80px] h-[8vh] min-h-[48px] bg-gray-100 text-gray-500 rounded-2xl font-black text-[10px] flex flex-col items-center justify-center gap-1 shadow-sm hover:bg-gray-200 transition-colors"
               >
-                BACK
+                <ArrowLeft size={20} />
+                <span>BACK</span>
               </button>
+
               <button 
                 onClick={() => {
                   setCurrentGame(null);
                   setCurrentWorld(null);
-                  setCurrentTab('home');
+                  setCurrentTab('games');
                 }}
-                className="flex-1 max-w-[200px] h-[10vh] min-h-[64px] bg-blue-500 text-white rounded-[2rem] font-black text-base flex items-center justify-center shadow-[0_6px_0_rgb(37,99,235)] hover:bg-blue-600 transition-colors active:translate-y-1 active:shadow-none"
+                className={`flex-1 max-w-[80px] h-[8vh] min-h-[48px] rounded-2xl font-black text-[10px] flex flex-col items-center justify-center gap-1 transition-all ${
+                  currentTab === 'games'
+                    ? 'bg-blue-500 text-white shadow-[0_4px_0_rgb(37,99,235)]' 
+                    : 'bg-white text-blue-500 border-2 border-blue-50'
+                }`}
               >
-                HOME
+                <Play size={20} fill={currentTab === 'games' ? 'currentColor' : 'none'} />
+                <span>PLAY</span>
+              </button>
+
+              <button 
+                onClick={() => {
+                  setCurrentGame(null);
+                  setCurrentTab('learn');
+                }}
+                className={`flex-1 max-w-[80px] h-[8vh] min-h-[48px] rounded-2xl font-black text-[10px] flex flex-col items-center justify-center gap-1 transition-all ${
+                  currentTab === 'learn' 
+                    ? 'bg-green-500 text-white shadow-[0_4px_0_rgb(22,163,74)]' 
+                    : 'bg-white text-green-500 border-2 border-green-50'
+                }`}
+              >
+                <BookOpen size={20} />
+                <span>LEARN</span>
+              </button>
+
+              <button 
+                onClick={() => {
+                  setCurrentGame(null);
+                  setCurrentTab('trophy');
+                }}
+                className={`flex-1 max-w-[80px] h-[8vh] min-h-[48px] rounded-2xl font-black text-[10px] flex flex-col items-center justify-center gap-1 transition-all ${
+                  currentTab === 'trophy' 
+                    ? 'bg-yellow-500 text-white shadow-[0_4px_0_rgb(202,138,4)]' 
+                    : 'bg-white text-yellow-500 border-2 border-yellow-50'
+                }`}
+              >
+                <TrophyIcon size={20} />
+                <span>PROGRESS</span>
               </button>
             </div>
+            
+            <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
           </motion.div>
         )}
       </AnimatePresence>

@@ -6,6 +6,8 @@ import WORDS from '../data/words.json';
 import { GameTimer } from './GameTimer';
 import { logGameSession } from '../lib/progress';
 
+import { voiceCoach } from '../lib/VoiceCoach';
+
 type BallType = 'standard' | 'golden' | 'fire' | 'ice';
 
 export function StadiumGame({ language, onBack, setDoveMessage, setDoveCheering }: any) {
@@ -23,6 +25,12 @@ export function StadiumGame({ language, onBack, setDoveMessage, setDoveCheering 
   const currentWord = WORDS[currentWordIndex];
   const baseTimeLimit = Math.max(5, 15 - (level - 1) * 2);
   const timeLimit = ballType === 'ice' ? baseTimeLimit * 2 : baseTimeLimit;
+
+  useEffect(() => {
+    // Play stadium background music
+    voiceCoach.playMusic('https://raw.githubusercontent.com/photonstorm/phaser3-examples/master/public/assets/audio/SoundEffects/ping.mp3');
+    return () => voiceCoach.stopMusic();
+  }, []);
 
   useEffect(() => {
     const savedHighScore = localStorage.getItem('football_high_score');
@@ -63,6 +71,7 @@ export function StadiumGame({ language, onBack, setDoveMessage, setDoveCheering 
 
   const handleTimeUp = React.useCallback(() => {
     if (isAnimating || isTimeFrozen) return;
+    voiceCoach.playSfx('wrong');
     setDoveMessage("Time's up! Let's try the next one.");
     setIsAnimating(true);
     setTimeout(() => {
@@ -80,10 +89,12 @@ export function StadiumGame({ language, onBack, setDoveMessage, setDoveCheering 
     
     setKickedOption(guess);
     setIsAnimating(true);
+    voiceCoach.playSfx('kick');
 
     setTimeout(() => {
       if (guess === currentWord[language as keyof typeof currentWord]) {
         // Correct
+        voiceCoach.playSfx('score');
         setDoveCheering(true);
         
         let points = 10;
@@ -106,10 +117,12 @@ export function StadiumGame({ language, onBack, setDoveMessage, setDoveCheering 
 
         setDoveMessage(message);
         setScore(s => s + points);
+        voiceCoach.playSfx('score');
         
         if ((currentWordIndex + 1) % 3 === 0) {
           setLevel(l => l + 1);
           setDoveMessage("Level Up! Faster now!");
+          voiceCoach.playSfx('success');
         }
         
         confetti({
@@ -131,6 +144,7 @@ export function StadiumGame({ language, onBack, setDoveMessage, setDoveCheering 
         }, 2000);
       } else {
         // Wrong
+        voiceCoach.playSfx('wrong');
         setDoveMessage("Oops! Try again!");
         setTimeout(() => {
           setIsAnimating(false);
@@ -201,20 +215,20 @@ export function StadiumGame({ language, onBack, setDoveMessage, setDoveCheering 
       <div className="w-full flex justify-between items-center z-10 mb-2 mt-2">
         <button 
           onClick={onBack}
-          className="bg-white/90 px-4 py-2 rounded-full font-black text-blue-600 shadow-[0_4px_0_rgb(37,99,235)] active:translate-y-1 active:shadow-[0_0px_0_rgb(37,99,235)] transition-all text-sm border-2 border-blue-200"
+          className="bg-white/90 px-4 py-2 rounded-full font-black text-blue-600 shadow-[0_4px_0_rgb(37,99,235)] active:translate-y-1 active:shadow-[0_0px_0_rgb(37,99,235)] transition-all text-base border-2 border-blue-200"
         >
           ← Back
         </button>
 
         <div className="flex gap-2">
-          <div className="bg-purple-500 px-3 py-1 rounded-full font-black text-white shadow-[0_4px_0_rgb(126,34,206)] text-xs flex items-center gap-1 border-2 border-purple-300">
-            <Trophy size={14} fill="currentColor" />
+          <div className="bg-purple-500 px-3 py-1 rounded-full font-black text-white shadow-[0_4px_0_rgb(126,34,206)] text-sm flex items-center gap-1 border-2 border-purple-300">
+            <Trophy size={16} fill="currentColor" />
             {highScore}
           </div>
-          <div className="bg-blue-400 px-3 py-1 rounded-full font-black text-white shadow-[0_4px_0_rgb(37,99,235)] text-sm border-2 border-blue-300">
+          <div className="bg-blue-400 px-3 py-1 rounded-full font-black text-white shadow-[0_4px_0_rgb(37,99,235)] text-base border-2 border-blue-300">
             Lvl {level}
           </div>
-          <div className="bg-yellow-400 px-3 py-1 rounded-full font-black text-yellow-900 shadow-[0_4px_0_rgb(202,138,4)] text-sm border-2 border-yellow-300">
+          <div className="bg-yellow-400 px-3 py-1 rounded-full font-black text-yellow-900 shadow-[0_4px_0_rgb(202,138,4)] text-base border-2 border-yellow-300">
             {score} pt
           </div>
         </div>
@@ -236,7 +250,7 @@ export function StadiumGame({ language, onBack, setDoveMessage, setDoveCheering 
         className="relative z-10 bg-gray-900 border-4 border-gray-700 rounded-2xl p-3 shadow-2xl mb-4 w-full max-w-sm text-center"
       >
         <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 w-24 h-3 bg-gray-600 rounded-t-xl"></div>
-        <h2 className="text-base font-black text-yellow-400 tracking-wider" style={{ textShadow: '0 0 20px rgba(250, 204, 21, 0.6)' }}>
+        <h2 className="text-xl font-black text-yellow-400 tracking-wider" style={{ textShadow: '0 0 20px rgba(250, 204, 21, 0.6)' }}>
           {currentWord.tigrinya}
         </h2>
         
@@ -250,7 +264,7 @@ export function StadiumGame({ language, onBack, setDoveMessage, setDoveCheering 
               className="absolute -right-4 -bottom-4 bg-white p-2 rounded-full shadow-lg border-2 border-gray-100 flex items-center gap-1"
             >
               {getBallIcon()}
-              <span className="text-[10px] font-black uppercase text-gray-600">{ballType}</span>
+              <span className="text-xs font-black uppercase text-gray-600">{ballType}</span>
             </motion.div>
           )}
         </AnimatePresence>
@@ -290,7 +304,7 @@ export function StadiumGame({ language, onBack, setDoveMessage, setDoveCheering 
               whileTap={!isAnimating ? { scale: 0.95 } : {}}
               onClick={() => handleGuess(option)}
               disabled={isAnimating}
-              className={`rounded-full w-[56px] h-[56px] flex items-center justify-center text-sm font-black border-2 active:translate-y-1 active:shadow-none transition-all relative overflow-hidden group shadow-md ${getBallStyles()} ${isKicked ? 'z-50' : 'z-10'}`}
+              className={`rounded-full w-[64px] h-[64px] flex items-center justify-center text-base font-black border-2 active:translate-y-1 active:shadow-none transition-all relative overflow-hidden group shadow-md ${getBallStyles()} ${isKicked ? 'z-50' : 'z-10'}`}
             >
               {/* Football pattern overlay */}
               <div className={`absolute inset-0 pointer-events-none flex items-center justify-center opacity-20 ${ballType === 'standard' ? 'text-black' : 'text-white'}`}>
@@ -313,7 +327,7 @@ export function StadiumGame({ language, onBack, setDoveMessage, setDoveCheering 
                 <div className="absolute inset-0 bg-blue-100/30 backdrop-blur-[1px] pointer-events-none" />
               )}
 
-              <span className={`relative z-10 text-center px-1 leading-tight rounded-lg backdrop-blur-sm text-[10px] ${ballType === 'standard' ? 'bg-white/80 text-gray-800' : 'bg-black/20 text-white'}`}>
+              <span className={`relative z-10 text-center px-1 leading-tight rounded-lg backdrop-blur-sm text-xs ${ballType === 'standard' ? 'bg-white/80 text-gray-800' : 'bg-black/20 text-white'}`}>
                 {option}
               </span>
             </motion.button>

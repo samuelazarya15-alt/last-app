@@ -34,40 +34,54 @@ export const Intro: React.FC<IntroProps> = ({ onStart }) => {
         <p className="text-white font-bold text-sm tracking-widest uppercase drop-shadow-md">Welcome to Selam</p>
       </div>
 
-      <div className="z-10 flex flex-col items-center mt-16">
+      <div className="z-10 flex flex-col items-center mt-8">
         <motion.div
           initial={{ y: -100, scale: 0.5 }}
-          animate={{ y: [0, -20, 0], scale: 1 }}
+          animate={{ 
+            y: [0, -30, 0],
+            rotate: [-2, 2, -2],
+          }}
           transition={{ 
-            y: { duration: 3, repeat: Infinity, ease: "easeInOut" },
+            y: { duration: 4, repeat: Infinity, ease: "easeInOut" },
+            rotate: { duration: 4, repeat: Infinity, ease: "easeInOut" },
             scale: { type: "spring", bounce: 0.6, duration: 1.5 }
           }}
-          className="relative mb-12 w-64 h-64 flex items-center justify-center"
+          className="relative mb-8 w-56 h-56 flex items-center justify-center"
         >
-          {/* Big 3D Dove */}
-          <img 
+          {/* Big 3D Dove with Flapping Animation */}
+          <motion.img 
             src="https://em-content.zobj.net/source/apple/354/dove_1f54a-fe0f.png" 
             alt="3D Dove Mascot" 
+            animate={{ 
+              scaleY: [1, 0.85, 1],
+              scaleX: [1, 1.08, 1],
+              y: [0, 8, 0]
+            }}
+            transition={{
+              duration: 0.6,
+              repeat: Infinity,
+              ease: "easeInOut"
+            }}
             className="w-full h-full object-contain drop-shadow-[0_20px_50px_rgba(0,0,0,0.3)]"
           />
         </motion.div>
 
         <motion.h1 
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          transition={{ delay: 0.5, type: "spring" }}
-          className="text-base font-black text-white mb-2 drop-shadow-[0_8px_8px_rgba(0,0,0,0.2)]"
-          style={{ WebkitTextStroke: '3px #3b82f6' }}
+          initial={{ scale: 0, rotate: -10 }}
+          animate={{ scale: 1, rotate: 0 }}
+          transition={{ delay: 0.5, type: "spring", stiffness: 260, damping: 20 }}
+          className="text-6xl font-black text-white mb-2 drop-shadow-[0_12px_12px_rgba(0,0,0,0.3)] tracking-tighter"
+          style={{ WebkitTextStroke: '4px #3b82f6' }}
         >
           Selam!
         </motion.h1>
 
         <motion.h2
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.7 }}
-          className="text-base font-black text-yellow-400 mb-6 drop-shadow-[0_4px_4px_rgba(0,0,0,0.3)]"
-          style={{ WebkitTextStroke: '2px #ca8a04' }}
+          initial={{ opacity: 0, y: 20, scale: 0.8 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ delay: 0.7, duration: 0.8 }}
+          className="text-5xl font-geez font-black text-yellow-400 mb-6 drop-shadow-[0_8px_8px_rgba(0,0,0,0.4)]"
+          style={{ WebkitTextStroke: '3px #ca8a04' }}
         >
           ሰላም
         </motion.h2>
@@ -76,9 +90,9 @@ export const Intro: React.FC<IntroProps> = ({ onStart }) => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.8 }}
-          className="text-sm font-black text-blue-800 mb-12 text-center bg-white/50 px-6 py-2 rounded-full"
+          className="text-base font-black text-blue-800 mb-8 text-center bg-white/60 px-8 py-2 rounded-full shadow-lg border-2 border-white/20"
         >
-          Learn Tigrinya & Amharic
+          Learn Tigrinya
         </motion.p>
 
         <motion.button

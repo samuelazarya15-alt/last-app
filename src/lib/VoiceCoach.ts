@@ -2,9 +2,20 @@ export class VoiceCoach {
   private name: string = '';
   private synth = window.speechSynthesis;
   private onSpeakStateChange: ((isSpeaking: boolean) => void) | null = null;
-  private isMuted: boolean = true; // Default to muted
+  private isMuted: boolean = false; // Default to unmuted for better UX if user interacts
   private audioContext: AudioContext | null = null;
   private audioBuffers: Map<string, AudioBuffer> = new Map();
+  private sfxVolume: number = 0.5;
+  private musicVolume: number = 0.3;
+  private bgMusic: HTMLAudioElement | null = null;
+
+  private sfxUrls = {
+    kick: 'https://raw.githubusercontent.com/photonstorm/phaser3-examples/master/public/assets/audio/SoundEffects/squit.mp3',
+    score: 'https://raw.githubusercontent.com/photonstorm/phaser3-examples/master/public/assets/audio/SoundEffects/ping.mp3',
+    wrong: 'https://raw.githubusercontent.com/photonstorm/phaser3-examples/master/public/assets/audio/SoundEffects/alien_death.wav',
+    pop: 'https://raw.githubusercontent.com/photonstorm/phaser3-examples/master/public/assets/audio/SoundEffects/magical_get.wav',
+    success: 'https://raw.githubusercontent.com/photonstorm/phaser3-examples/master/public/assets/audio/SoundEffects/key.wav'
+  };
 
   constructor() {
     // Initialize AudioContext lazily on user interaction
@@ -15,11 +26,54 @@ export class VoiceCoach {
       if (this.audioContext.state === 'suspended') {
         this.audioContext.resume();
       }
+      // Preload SFX
+      Object.values(this.sfxUrls).forEach(url => this.preloadAudio(url));
+      
       document.removeEventListener('click', initAudioContext);
       document.removeEventListener('touchstart', initAudioContext);
     };
     document.addEventListener('click', initAudioContext);
     document.addEventListener('touchstart', initAudioContext);
+  }
+
+  setSfxVolume(volume: number) {
+    this.sfxVolume = Math.max(0, Math.min(1, volume));
+  }
+
+  setMusicVolume(volume: number) {
+    this.musicVolume = Math.max(0, Math.min(1, volume));
+    if (this.bgMusic) {
+      this.bgMusic.volume = this.musicVolume;
+    }
+  }
+
+  getSfxVolume() { return this.sfxVolume; }
+  getMusicVolume() { return this.musicVolume; }
+
+  playSfx(type: keyof typeof this.sfxUrls) {
+    const url = this.sfxUrls[type];
+    if (url) {
+      this.playBuffer(url, this.sfxVolume);
+    }
+  }
+
+  playMusic(url: string) {
+    if (this.bgMusic) {
+      this.bgMusic.pause();
+    }
+    this.bgMusic = new Audio(url);
+    this.bgMusic.loop = true;
+    this.bgMusic.volume = this.musicVolume;
+    if (!this.isMuted) {
+      this.bgMusic.play().catch(e => console.error("Music playback failed", e));
+    }
+  }
+
+  stopMusic() {
+    if (this.bgMusic) {
+      this.bgMusic.pause();
+      this.bgMusic = null;
+    }
   }
 
   setName(name: string) {
@@ -36,9 +90,12 @@ export class VoiceCoach {
 
   toggleMute() {
     this.isMuted = !this.isMuted;
-    if (this.isMuted && this.synth) {
-      this.synth.cancel();
+    if (this.isMuted) {
+      if (this.synth) this.synth.cancel();
+      if (this.bgMusic) this.bgMusic.pause();
       this.onSpeakStateChange?.(false);
+    } else {
+      if (this.bgMusic) this.bgMusic.play().catch(() => {});
     }
     return this.isMuted;
   }
@@ -51,15 +108,16 @@ export class VoiceCoach {
     if (!this.audioContext || this.audioBuffers.has(url)) return;
     try {
       const response = await fetch(url);
+      if (!response.ok) return; // Silently fail, playBuffer will use fallback
       const arrayBuffer = await response.arrayBuffer();
       const audioBuffer = await this.audioContext.decodeAudioData(arrayBuffer);
       this.audioBuffers.set(url, audioBuffer);
     } catch (e) {
-      console.error("Failed to preload audio:", url, e);
+      // Silently fail to avoid console noise, playBuffer has a fallback to new Audio()
     }
   }
 
-  playBuffer(url: string): Promise<void> {
+  playBuffer(url: string, volume: number = 1.0): Promise<void> {
     return new Promise((resolve) => {
       if (this.isMuted || !this.audioContext) return resolve();
       
@@ -67,6 +125,7 @@ export class VoiceCoach {
       if (!buffer) {
         // Fallback if not preloaded
         const audio = new Audio(url);
+        audio.volume = volume;
         audio.onended = () => resolve();
         audio.onerror = () => resolve();
         audio.play().catch(() => resolve());
@@ -74,8 +133,13 @@ export class VoiceCoach {
       }
 
       const source = this.audioContext.createBufferSource();
+      const gainNode = this.audioContext.createGain();
+      gainNode.gain.value = volume;
+      
       source.buffer = buffer;
-      source.connect(this.audioContext.destination);
+      source.connect(gainNode);
+      gainNode.connect(this.audioContext.destination);
+      
       source.onended = () => resolve();
       source.start(0);
     });
@@ -140,7 +204,7 @@ export class VoiceCoach {
     // Play native audio first
     try {
       this.onSpeakStateChange?.(true); // Make the dove bounce during native audio too
-      const url = nativeAudioUrl || 'https://actions.google.com/sounds/v1/cartoon/cartoon_boing.ogg';
+      const url = nativeAudioUrl || 'https://raw.githubusercontent.com/photonstorm/phaser3-examples/master/public/assets/audio/SoundEffects/squit.mp3';
       await this.playBuffer(url);
     } catch (e) {
       console.error("Audio playback failed", e);

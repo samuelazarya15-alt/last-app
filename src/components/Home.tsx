@@ -32,11 +32,11 @@ export function Home({ setCurrentTab, setCurrentWorld }: HomeProps) {
           <Star size={48} fill="currentColor" />
         </motion.div>
         
-        <h1 className="text-base font-black text-blue-600 mb-2 drop-shadow-sm tracking-tight">
+        <h1 className="text-xl font-black text-blue-600 mb-2 drop-shadow-sm tracking-tight">
           Hi, {kidName}!
         </h1>
-        <div className="inline-block bg-white/80 backdrop-blur-sm px-4 py-2 rounded-2xl border-2 border-blue-100 shadow-sm">
-          <p className="text-sm font-bold text-gray-600">
+        <div className="inline-block bg-white/80 backdrop-blur-sm px-5 py-2.5 rounded-2xl border-2 border-blue-100 shadow-sm">
+          <p className="text-base font-bold text-gray-600">
             Where to today?
           </p>
         </div>
@@ -53,14 +53,14 @@ export function Home({ setCurrentTab, setCurrentWorld }: HomeProps) {
               setCurrentTab('games');
               voiceCoach.speak(`Welcome to ${world.name}!`, "english");
             }}
-            className={`group relative bg-white rounded-2xl shadow-sm border-2 border-${world.color}-100 flex flex-col items-center justify-center gap-2 transition-all hover:border-${world.color}-400 hover:shadow-md overflow-hidden max-h-[12vh] min-h-[80px]`}
+            className={`group relative bg-white rounded-2xl shadow-sm border-2 border-${world.color}-100 flex flex-col items-center justify-center gap-2 transition-all hover:border-${world.color}-400 hover:shadow-md overflow-hidden max-h-[15vh] min-h-[100px]`}
           >
             <div className={`absolute top-0 left-0 w-full h-1 bg-${world.color}-400`} />
-            <div className={`bg-${world.color}-400 p-2 rounded-xl shadow-sm group-hover:scale-110 group-hover:rotate-3 transition-transform`}>
-              <world.icon size={32} className="text-white" strokeWidth={2.5} />
+            <div className={`bg-${world.color}-400 p-3 rounded-xl shadow-sm group-hover:scale-110 group-hover:rotate-3 transition-transform`}>
+              <world.icon size={36} className="text-white" strokeWidth={2.5} />
             </div>
             <div className="text-center px-2">
-              <span className={`block text-sm font-black text-${world.color}-600 tracking-tight leading-tight`}>{world.name}</span>
+              <span className={`block text-base font-black text-${world.color}-600 tracking-tight leading-tight`}>{world.name}</span>
             </div>
           </motion.button>
         ))}
