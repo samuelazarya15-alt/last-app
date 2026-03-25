@@ -9,7 +9,9 @@ import { DoveMascot } from './DoveMascot';
 const CATEGORIES = [
   'All', 'Family', 'Colors', 'Adjectives', 'Verbs', 'Professions', 
   'Food', 'Nature', 'Phrases', 'Dates', 'Numbers', 'Body', 
-  'House', 'Transport', 'Places'
+  'House', 'Transport', 'Places', 'Clothing', 'Time', 'Emotions', 
+  'Weather', 'School', 'Tools', 'Tech', 'Sports', 'Hobbies', 
+  'Shapes', 'Directions'
 ];
 
 export function Learn({ language }: { language: string }) {
