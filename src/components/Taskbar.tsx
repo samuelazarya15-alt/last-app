@@ -15,7 +15,7 @@ export function Taskbar({ currentTab, setCurrentTab }: TaskbarProps) {
   ];
 
   return (
-    <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 w-[95%] max-w-md bg-white/90 backdrop-blur-md border-4 border-gray-100 px-4 py-3 flex justify-between items-center z-50 rounded-full shadow-2xl">
+    <div className="w-full max-w-md bg-white/90 backdrop-blur-md border-4 border-gray-100 px-4 py-3 flex justify-between items-center rounded-full shadow-2xl">
       {tabs.map((tab) => {
         const Icon = tab.icon;
         const isActive = currentTab === tab.id;

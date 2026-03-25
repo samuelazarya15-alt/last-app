@@ -140,8 +140,8 @@ export function DressUpGame({ language, onBack, setDoveMessage, setDoveCheering 
   if (gameOver) {
     return (
       <div className="w-full h-full flex flex-col items-center justify-center bg-sky-50 p-4">
-        <h2 className="text-4xl font-black text-blue-600 mb-4">Game Over!</h2>
-        <p className="text-2xl font-bold text-gray-700 mb-8">Score: {score}</p>
+        <h2 className="text-base font-black text-blue-600 mb-4">Game Over!</h2>
+        <p className="text-sm font-bold text-gray-700 mb-8">Score: {score}</p>
         <div className="flex gap-4">
           <button 
             onClick={() => {
@@ -151,13 +151,13 @@ export function DressUpGame({ language, onBack, setDoveMessage, setDoveCheering 
               setDressedItems([]);
               // spawnNextItem will run due to useEffect
             }}
-            className="bg-green-500 text-white px-8 py-4 rounded-2xl font-black text-xl shadow-[0_6px_0_rgb(21,128,61)] active:translate-y-1 active:shadow-none"
+            className="bg-green-500 text-white px-8 py-4 rounded-2xl font-black text-sm shadow-[0_6px_0_rgb(21,128,61)] active:translate-y-1 active:shadow-none"
           >
             Play Again
           </button>
           <button 
             onClick={onBack}
-            className="bg-gray-400 text-white px-8 py-4 rounded-2xl font-black text-xl shadow-[0_6px_0_rgb(107,114,128)] active:translate-y-1 active:shadow-none"
+            className="bg-gray-400 text-white px-8 py-4 rounded-2xl font-black text-sm shadow-[0_6px_0_rgb(107,114,128)] active:translate-y-1 active:shadow-none"
           >
             Back to Games
           </button>
@@ -171,15 +171,15 @@ export function DressUpGame({ language, onBack, setDoveMessage, setDoveCheering 
       <div className="w-full flex justify-between items-center z-10 mb-4">
         <button 
           onClick={onBack}
-          className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-md text-2xl"
+          className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-md text-sm"
         >
           🏠
         </button>
         <div className="flex gap-4">
-          <div className="bg-white px-4 py-2 rounded-2xl shadow-sm font-bold text-pink-600">
+          <div className="bg-white px-4 py-2 rounded-2xl shadow-sm font-bold text-pink-600 text-sm">
             Level {level}
           </div>
-          <div className="bg-white px-4 py-2 rounded-2xl shadow-sm font-bold text-green-600">
+          <div className="bg-white px-4 py-2 rounded-2xl shadow-sm font-bold text-green-600 text-sm">
             Score: {score}
           </div>
         </div>
@@ -192,7 +192,7 @@ export function DressUpGame({ language, onBack, setDoveMessage, setDoveCheering 
       </div>
 
       <div className="bg-white/90 backdrop-blur-sm p-4 rounded-2xl shadow-md border-2 border-white text-center mb-4 z-10">
-        <h2 className="text-3xl font-black text-pink-600">
+        <h2 className="text-base font-black text-pink-600">
           Find: {targetWord?.translations[language as keyof typeof targetWord.translations] || targetWord?.english}
         </h2>
       </div>
@@ -239,8 +239,8 @@ export function DressUpGame({ language, onBack, setDoveMessage, setDoveCheering 
                 onClick={() => handleSelect(opt)}
                 className="bg-white p-4 rounded-2xl shadow-md border-4 border-pink-100 flex items-center justify-center gap-4 hover:border-pink-300 transition-colors"
               >
-                <span className="text-4xl">{opt.emoji}</span>
-                <span className="text-xl font-bold text-gray-700 uppercase">{opt.english}</span>
+                <span className="text-2xl">{opt.emoji}</span>
+                <span className="text-sm font-bold text-gray-700 uppercase">{opt.english}</span>
               </motion.button>
             ))}
           </AnimatePresence>

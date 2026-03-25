@@ -56,7 +56,7 @@ export const Intro: React.FC<IntroProps> = ({ onStart }) => {
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
           transition={{ delay: 0.5, type: "spring" }}
-          className="text-7xl md:text-9xl font-black text-white mb-2 drop-shadow-[0_8px_8px_rgba(0,0,0,0.2)]"
+          className="text-base font-black text-white mb-2 drop-shadow-[0_8px_8px_rgba(0,0,0,0.2)]"
           style={{ WebkitTextStroke: '3px #3b82f6' }}
         >
           Selam!
@@ -66,7 +66,7 @@ export const Intro: React.FC<IntroProps> = ({ onStart }) => {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.7 }}
-          className="text-5xl md:text-7xl font-black text-yellow-400 mb-6 drop-shadow-[0_4px_4px_rgba(0,0,0,0.3)]"
+          className="text-base font-black text-yellow-400 mb-6 drop-shadow-[0_4px_4px_rgba(0,0,0,0.3)]"
           style={{ WebkitTextStroke: '2px #ca8a04' }}
         >
           ሰላም
@@ -76,7 +76,7 @@ export const Intro: React.FC<IntroProps> = ({ onStart }) => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.8 }}
-          className="text-2xl font-black text-blue-800 mb-12 text-center bg-white/50 px-6 py-2 rounded-full"
+          className="text-sm font-black text-blue-800 mb-12 text-center bg-white/50 px-6 py-2 rounded-full"
         >
           Learn Tigrinya & Amharic
         </motion.p>
@@ -92,7 +92,7 @@ export const Intro: React.FC<IntroProps> = ({ onStart }) => {
         >
           <div className="absolute top-0 left-0 w-full h-2 bg-yellow-400" />
           <div className="absolute inset-0 bg-yellow-400 opacity-0 group-hover:opacity-5 transition-opacity" />
-          <span className="relative z-10 text-4xl font-black text-yellow-600 tracking-tighter flex items-center gap-4">
+          <span className="relative z-10 text-base font-black text-yellow-600 tracking-tighter flex items-center gap-4">
             START 
             <motion.span
               animate={{ x: [0, 5, 0] }}

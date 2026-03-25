@@ -95,12 +95,12 @@ export function FlyDoveGame({ language, onBack, setDoveMessage, setDoveCheering 
       <div className="w-full flex justify-between items-center z-10 mb-4 mt-2">
         <button 
           onClick={onBack}
-          className="bg-white text-blue-500 font-black px-6 py-3 rounded-full shadow-[0_4px_0_rgb(191,219,254)] active:translate-y-1 active:shadow-none z-10"
+          className="bg-white text-blue-500 font-black px-6 py-3 rounded-full shadow-[0_4px_0_rgb(191,219,254)] active:translate-y-1 active:shadow-none z-10 text-sm"
         >
           ← Back
         </button>
 
-        <div className="bg-white text-blue-600 font-black px-6 py-3 rounded-full shadow-md z-10 text-xl">
+        <div className="bg-white text-blue-600 font-black px-6 py-3 rounded-full shadow-md z-10 text-sm">
           Score: {score}
         </div>
       </div>
@@ -115,32 +115,33 @@ export function FlyDoveGame({ language, onBack, setDoveMessage, setDoveCheering 
       </div>
 
       <div className="text-center mb-8 z-10 mt-4">
-        <h2 className="text-4xl font-black text-gray-800 mb-4">Help the Dove Fly</h2>
+        <h2 className="text-base font-black text-gray-800 mb-4">Help the Dove Fly</h2>
         <div className="bg-white px-8 py-4 rounded-full shadow-md inline-block">
-          <p className="text-2xl font-bold text-blue-600">{translation}</p>
+          <p className="text-base font-bold text-blue-600">{translation}</p>
         </div>
       </div>
 
-      <div className="flex-1 flex flex-col items-center justify-end w-full max-w-2xl z-10 relative pb-12">
+      <div className="flex-1 flex flex-col items-center justify-start w-full max-w-2xl z-10 relative pb-12">
         {/* The Dove */}
         <motion.div
           animate={isFlying ? { y: -200, scale: 1.2, rotate: [0, -10, 10, 0] } : { y: 0 }}
           transition={isFlying ? { duration: 1.5, ease: "easeOut" } : { duration: 0.5 }}
-          className="text-9xl mb-12 drop-shadow-2xl"
+          className="mt-4 drop-shadow-2xl flex items-center justify-center absolute top-0"
+          style={{ fontSize: '20vh', maxWidth: '120px', lineHeight: 1 }}
         >
           🕊️
         </motion.div>
 
         {/* Cloud Options */}
-        <div className="grid grid-cols-3 gap-4 w-full">
+        <div className="fixed bottom-24 right-4 flex flex-col gap-4 z-50">
           {options.map((option, index) => (
             <motion.button
               key={index}
-              whileHover={{ scale: 1.05, y: -5 }}
+              whileHover={{ scale: 1.05, x: -5 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => handleFly(option)}
               disabled={isFlying}
-              className={`bg-white text-sky-600 text-3xl font-black py-8 px-4 rounded-3xl border-4 border-sky-200 shadow-[0_8px_0_rgb(186,230,253)] active:translate-y-2 active:shadow-none transition-all flex items-center justify-center ${isFlying ? 'opacity-50 cursor-not-allowed' : ''}`}
+              className={`bg-white text-sky-600 text-sm font-black w-[56px] h-[56px] rounded-full border-2 border-sky-200 shadow-md active:translate-y-1 active:shadow-none transition-all flex items-center justify-center ${isFlying ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               {option}
             </motion.button>

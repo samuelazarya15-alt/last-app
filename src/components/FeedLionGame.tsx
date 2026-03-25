@@ -95,12 +95,12 @@ export function FeedLionGame({ language, onBack, setDoveMessage, setDoveCheering
       <div className="w-full flex justify-between items-center z-10 mb-4 mt-2">
         <button 
           onClick={onBack}
-          className="bg-white text-orange-500 font-black px-6 py-3 rounded-full shadow-[0_4px_0_rgb(253,186,116)] active:translate-y-1 active:shadow-none z-10"
+          className="bg-white text-orange-500 font-black px-6 py-3 rounded-full shadow-[0_4px_0_rgb(253,186,116)] active:translate-y-1 active:shadow-none z-10 text-sm"
         >
           ← Back
         </button>
 
-        <div className="bg-white text-orange-600 font-black px-6 py-3 rounded-full shadow-md z-10 text-xl">
+        <div className="bg-white text-orange-600 font-black px-6 py-3 rounded-full shadow-md z-10 text-sm">
           Score: {score}
         </div>
       </div>
@@ -114,33 +114,34 @@ export function FeedLionGame({ language, onBack, setDoveMessage, setDoveCheering
         />
       </div>
 
-      <div className="text-center mb-8 z-10">
-        <h2 className="text-4xl font-black text-gray-800 mb-4">Feed the Lion</h2>
+      <div className="text-center mb-8 z-10 mt-4">
+        <h2 className="text-base font-black text-gray-800 mb-4">Feed the Lion</h2>
         <div className="bg-white px-8 py-4 rounded-full shadow-md inline-block">
-          <p className="text-2xl font-bold text-orange-600">{translation}</p>
+          <p className="text-base font-bold text-orange-600">{translation}</p>
         </div>
       </div>
 
-      <div className="flex-1 flex flex-col items-center justify-center w-full max-w-2xl z-10 relative">
+      <div className="flex-1 flex flex-col items-center justify-start w-full max-w-2xl z-10 relative">
         {/* The Lion */}
         <motion.div
           animate={isEating ? { scale: [1, 1.2, 1], rotate: [0, -5, 5, 0] } : { y: [0, -10, 0] }}
           transition={isEating ? { duration: 0.5, repeat: 3 } : { duration: 2, repeat: Infinity, ease: "easeInOut" }}
-          className="text-9xl mb-12 drop-shadow-2xl"
+          className="mt-4 drop-shadow-2xl flex items-center justify-center absolute top-0"
+          style={{ fontSize: '20vh', maxWidth: '120px', lineHeight: 1 }}
         >
-          {isEating ? '🦁😋' : '🦁'}
+          {isEating ? '🦁' : '🦁'}
         </motion.div>
 
         {/* Food Options */}
-        <div className="grid grid-cols-3 gap-4 w-full">
+        <div className="fixed bottom-24 right-4 flex flex-col gap-4 z-50">
           {options.map((option, index) => (
             <motion.button
               key={index}
-              whileHover={{ scale: 1.05, y: -5 }}
+              whileHover={{ scale: 1.05, x: -5 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => handleFeed(option)}
               disabled={isEating}
-              className={`bg-yellow-400 text-yellow-900 text-3xl font-black py-8 px-4 rounded-3xl border-4 border-white shadow-[0_8px_0_rgb(202,138,4)] active:translate-y-2 active:shadow-none transition-all flex items-center justify-center ${isEating ? 'opacity-50 cursor-not-allowed' : ''}`}
+              className={`bg-yellow-400 text-yellow-900 text-sm font-black w-[56px] h-[56px] rounded-full border-2 border-white shadow-md active:translate-y-1 active:shadow-none transition-all flex items-center justify-center ${isEating ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               {option}
             </motion.button>

@@ -37,23 +37,49 @@ const LANGUAGES = [
   { code: 'german', name: 'German', flag: '🇩🇪', color: 'bg-gray-500', shadow: 'shadow-[0_8px_0_rgb(107,114,128)]' },
 ];
 
+const WORLDS = [
+  { id: 'action', name: 'Action Park' },
+  { id: 'nature', name: 'Nature Valley' },
+  { id: 'brain', name: 'Brain Gym' },
+  { id: 'heritage', name: 'Heritage House' },
+];
+
 const GAMES = [
-  { id: 'football', name: 'Word Football', icon: '⚽', color: 'green' },
-  { id: 'fruit', name: 'Fruit Market', icon: '🍎', color: 'red' },
-  { id: 'hungry', name: 'Hungry Dove', icon: '🍞', color: 'yellow' },
-  { id: 'memory', name: 'Memory Clouds', icon: '☁️', color: 'sky' },
-  { id: 'soundpop', name: 'Sound Pop', icon: '🫧', color: 'cyan' },
-  { id: 'dove', name: 'Help Dove Fly', icon: '🕊️', color: 'blue' },
-  { id: 'lion', name: 'Feed the Lion', icon: '🥩', color: 'orange' },
-  { id: 'trace', name: 'Character Trace', icon: '✍️', color: 'yellow' },
-  { id: 'train', name: 'Heritage Train', icon: '🚂', color: 'stone' },
-  { id: 'color', name: 'Color Splash', icon: '🎨', color: 'pink' },
-  { id: 'animal', name: 'Animal Orchestra', icon: '🦒', color: 'emerald' },
-  { id: 'rocket', name: 'Space Rocket', icon: '🚀', color: 'indigo' },
-  { id: 'hide', name: 'Hide & Seek', icon: '🏠', color: 'teal' },
-  { id: 'bridge', name: 'Word Bridge', icon: '🌉', color: 'amber' },
-  { id: 'dressup', name: 'Dress-Up', icon: '👗', color: 'fuchsia' },
-  { id: 'match', name: 'Word Match', icon: '🧩', color: 'purple' },
+  // Action Park
+  { id: 'football', name: 'Word Football', icon: '⚽', color: 'green', world: 'action' },
+  { id: 'dove', name: 'Dove Flight', icon: '🕊️', color: 'blue', world: 'action' },
+  { id: 'rocket', name: 'Space Rocket', icon: '🚀', color: 'indigo', world: 'action' },
+  { id: 'transport', name: 'Transport Race', icon: '🏎️', color: 'red', world: 'action' },
+  { id: 'soundpop', name: 'Sound Pop', icon: '🫧', color: 'cyan', world: 'action' },
+  { id: 'train', name: 'Heritage Train', icon: '🚂', color: 'stone', world: 'action' },
+  
+  // Nature Valley
+  { id: 'lion', name: 'Feed the Lion', icon: '🥩', color: 'orange', world: 'nature' },
+  { id: 'garden', name: 'Vegetable Garden', icon: '🥕', color: 'emerald', world: 'nature' },
+  { id: 'animal', name: 'Animal Orchestra', icon: '🦒', color: 'emerald', world: 'nature' },
+  { id: 'honey', name: 'Honey Bee', icon: '🐝', color: 'yellow', world: 'nature' },
+  { id: 'fruit', name: 'Fruit Market', icon: '🍎', color: 'red', world: 'nature' },
+  { id: 'hungry', name: 'Hungry Dove', icon: '🍞', color: 'yellow', world: 'nature' },
+  { id: 'sunmoon', name: 'Sun & Moon', icon: '🌞', color: 'amber', world: 'nature' },
+  { id: 'sheep', name: 'Counting Sheep', icon: '🐑', color: 'slate', world: 'nature' },
+
+  // Brain Gym
+  { id: 'memory', name: 'Memory Clouds', icon: '☁️', color: 'sky', world: 'brain' },
+  { id: 'shapes', name: 'Shape Sorter', icon: '🔺', color: 'purple', world: 'brain' },
+  { id: 'bridge', name: 'Word Bridge', icon: '🌉', color: 'amber', world: 'brain' },
+  { id: 'clock', name: 'Clock Tower', icon: '🕰️', color: 'stone', world: 'brain' },
+  { id: 'trace', name: 'Character Trace', icon: '✍️', color: 'yellow', world: 'brain' },
+  { id: 'color', name: 'Color Splash', icon: '🎨', color: 'pink', world: 'brain' },
+  { id: 'hide', name: 'Hide & Seek', icon: '🏠', color: 'teal', world: 'brain' },
+  { id: 'balloon', name: 'Alphabet Balloon', icon: '🎈', color: 'red', world: 'brain' },
+  { id: 'body', name: 'Body Parts', icon: '👀', color: 'rose', world: 'brain' },
+  { id: 'match', name: 'Word Match', icon: '🧩', color: 'purple', world: 'brain' },
+
+  // Heritage House
+  { id: 'grandparent', name: 'Grandparent Mode', icon: '👵', color: 'amber', world: 'heritage' },
+  { id: 'coffee', name: 'Coffee Ceremony', icon: '☕', color: 'stone', world: 'heritage' },
+  { id: 'dressup', name: 'Dress-Up', icon: '👗', color: 'fuchsia', world: 'heritage' },
+  { id: 'family', name: 'Family Tree', icon: '🌳', color: 'green', world: 'heritage' },
 ];
 
 export default function App() {
@@ -61,8 +87,20 @@ export default function App() {
   const [kidName, setKidName] = useState('');
   const [language, setLanguage] = useState<string | null>(null);
   const [currentTab, setCurrentTab] = useState('home');
+  const [currentWorld, setCurrentWorld] = useState<string | null>(null);
   const [currentGame, setCurrentGame] = useState<string | null>(null);
   const [doveCheering, setDoveCheering] = useState(false);
+  const [stars, setStars] = useState(0);
+
+  useEffect(() => {
+    if (step === 'app') {
+      import('./lib/progress').then(({ getUserStats }) => {
+        getUserStats().then(stats => {
+          if (stats) setStars(stats.stars);
+        });
+      });
+    }
+  }, [step, currentTab, currentGame]);
 
   // Helper to trigger voice messages
   const setDoveMessage = React.useCallback((msg: string) => {
@@ -107,8 +145,8 @@ export default function App() {
               🏠
             </button>
           </div>
-          <h2 className="text-3xl font-black text-blue-600 mb-4">{name}</h2>
-          <p className="text-xl font-bold text-gray-500 text-center">Coming soon! Let's play another game.</p>
+          <h2 className="text-base font-black text-blue-600 mb-4">{name}</h2>
+          <p className="text-sm font-bold text-gray-500 text-center">Coming soon! Let's play another game.</p>
         </div>
       );
 
@@ -135,37 +173,48 @@ export default function App() {
 
     switch (currentTab) {
       case 'home':
-        return <Home setCurrentTab={setCurrentTab} />;
+        return <Home setCurrentTab={setCurrentTab} setCurrentWorld={setCurrentWorld} />;
       case 'dictionary':
         return <Dictionary language={language || 'english'} />;
       case 'trophy':
         return <Trophy />;
       case 'games':
+        const filteredGames = currentWorld ? GAMES.filter(g => g.world === currentWorld) : GAMES;
         return (
-          <div className="w-full h-full p-4 pb-32 flex flex-col items-center justify-start bg-sky-50 overflow-y-auto pt-6">
+          <div className="w-full h-full p-4 pb-8 flex flex-col items-center justify-start bg-sky-50 overflow-y-auto pt-[28vh]">
             <motion.div 
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="text-center mb-6"
+              className="text-center mb-6 flex flex-col items-center"
             >
-              <h2 className="text-3xl font-black text-green-600 mb-1">Play & Learn!</h2>
+              {currentWorld && (
+                <button 
+                  onClick={() => setCurrentTab('home')}
+                  className="mb-2 text-blue-500 font-bold flex items-center justify-center gap-2 min-w-[50px] min-h-[50px] px-4 rounded-full hover:bg-blue-50 transition-colors text-sm"
+                >
+                  ← Back to Worlds
+                </button>
+              )}
+              <h2 className="text-base font-black text-green-600 mb-1">
+                {currentWorld ? WORLDS.find(w => w.id === currentWorld)?.name : 'Play & Learn!'}
+              </h2>
               <p className="text-sm font-bold text-gray-400 uppercase tracking-widest">Choose a Game</p>
             </motion.div>
 
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 w-full max-w-2xl px-2">
-              {GAMES.map((game) => (
+            <div className="grid grid-cols-4 gap-8 w-full max-w-4xl px-2">
+              {filteredGames.map((game) => (
                 <motion.button
                   key={game.id}
                   whileHover={{ scale: 1.05, y: -5 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => setCurrentGame(game.id)}
-                  className={`group relative bg-white p-4 rounded-[2rem] shadow-[0_8px_16px_rgba(0,0,0,0.05)] border-4 border-${game.color}-50 flex flex-col items-center justify-center gap-3 transition-all hover:border-${game.color}-400 hover:shadow-[0_12px_24px_rgba(0,0,0,0.1)] h-40`}
+                  className={`group relative bg-white p-2 rounded-2xl shadow-sm border-2 border-${game.color}-50 flex flex-col items-center justify-center gap-2 transition-all hover:border-${game.color}-400 hover:shadow-md w-full aspect-square`}
                 >
-                  <div className={`bg-${game.color}-400 p-4 rounded-2xl shadow-[0_4px_0_rgb(0,0,0,0.2)] group-hover:scale-110 transition-transform`}>
-                    <span className="text-4xl">{game.icon}</span>
+                  <div className={`bg-${game.color}-400 w-[48px] h-[48px] rounded-xl shadow-sm group-hover:scale-110 transition-transform flex items-center justify-center`}>
+                    <span className="text-2xl">{game.icon}</span>
                   </div>
-                  <div className="text-center">
-                    <span className={`block text-lg font-black text-${game.color}-600 leading-tight`}>{game.name}</span>
+                  <div className="text-center px-1">
+                    <span className={`block text-[10px] font-black text-${game.color}-600 leading-tight line-clamp-2`}>{game.name}</span>
                   </div>
                 </motion.button>
               ))}
@@ -173,12 +222,12 @@ export default function App() {
           </div>
         );
       default:
-        return <Home setCurrentTab={setCurrentTab} />;
+        return <Home setCurrentTab={setCurrentTab} setCurrentWorld={setCurrentWorld} />;
     }
   };
 
   return (
-    <div className="w-full h-screen bg-sky-200 overflow-hidden font-sans selection:bg-yellow-300 relative">
+    <div className="w-full max-w-md mx-auto h-screen bg-sky-200 overflow-hidden font-sans selection:bg-yellow-300 relative shadow-2xl">
       <AnimatePresence mode="wait">
         {step === 'intro' && (
           <Intro key="intro" onStart={() => {
@@ -193,24 +242,24 @@ export default function App() {
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, y: -50 }}
-            className="flex flex-col items-center justify-center h-full p-6 max-h-[80vh] m-auto"
+            className="flex flex-col items-center justify-center h-full p-6 max-h-[80vh] m-auto gap-8"
           >
             <DoveMascot isCheering={doveCheering} />
             <div className="bg-white/90 backdrop-blur-sm p-8 rounded-[2rem] shadow-xl border-4 border-white w-full max-w-[85%] text-center mt-4">
-              <h1 className="text-3xl font-black text-blue-500 mb-6">What's your name?</h1>
-              <form onSubmit={handleNameSubmit} className="flex flex-col gap-4">
+              <h1 className="text-base font-black text-blue-500 mb-6">What's your name?</h1>
+              <form onSubmit={handleNameSubmit} className="flex flex-col gap-8">
                 <input 
                   type="text" 
                   value={kidName}
                   onChange={(e) => setKidName(e.target.value)}
                   placeholder="Your Name"
-                  className="w-full text-center text-2xl font-bold p-4 rounded-2xl border-4 border-blue-100 outline-none focus:border-blue-400 transition-colors"
+                  className="w-full text-center text-base font-bold p-4 rounded-2xl border-4 border-blue-100 outline-none focus:border-blue-400 transition-colors"
                   autoFocus
                 />
                 <button 
                   type="submit"
                   disabled={!kidName.trim()}
-                  className="bg-yellow-400 text-yellow-900 text-2xl font-black py-4 rounded-2xl shadow-[0_6px_0_rgb(202,138,4)] active:translate-y-1 active:shadow-none disabled:opacity-50 transition-all w-full"
+                  className="bg-yellow-400 text-yellow-900 text-base font-black py-4 rounded-2xl shadow-[0_6px_0_rgb(202,138,4)] active:translate-y-1 active:shadow-none disabled:opacity-50 transition-all w-full"
                 >
                   Next
                 </button>
@@ -229,7 +278,7 @@ export default function App() {
           >
             <DoveMascot isCheering={doveCheering} />
             <div className="bg-white/90 backdrop-blur-sm p-8 rounded-[2rem] shadow-xl border-4 border-white w-full max-w-[85%] text-center mt-4">
-              <h1 className="text-3xl font-black text-blue-500 mb-6">What language do you speak?</h1>
+              <h1 className="text-base font-black text-blue-500 mb-6">What language do you speak?</h1>
               <div className="flex flex-col gap-4">
                 {LANGUAGES.map((lang) => (
                   <motion.button
@@ -237,9 +286,9 @@ export default function App() {
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                     onClick={() => handleLanguageSelect(lang.code)}
-                    className={`${lang.color} ${lang.shadow} text-white text-xl font-black py-4 px-6 rounded-2xl flex items-center justify-start gap-4 border-2 border-white/30 active:translate-y-1 active:shadow-none transition-all w-full`}
+                    className={`${lang.color} ${lang.shadow} text-white text-sm font-black py-4 px-6 rounded-2xl flex items-center justify-start gap-4 border-2 border-white/30 active:translate-y-1 active:shadow-none transition-all w-full`}
                   >
-                    <span className="text-3xl">{lang.flag}</span>
+                    <span className="text-2xl">{lang.flag}</span>
                     {lang.name}
                   </motion.button>
                 ))}
@@ -253,27 +302,79 @@ export default function App() {
             key="app-content"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="w-full h-full relative"
+            className="w-full h-screen flex flex-col bg-sky-50 overflow-hidden"
           >
-            {!currentGame && <DoveMascot isCheering={doveCheering} />}
+            {/* Top Header (15vh) */}
+            <div className="h-[15vh] shrink-0 bg-white/80 backdrop-blur-md shadow-sm z-50 flex items-center justify-between px-6">
+              <div className="flex items-center gap-4">
+                <div className="w-[10vh] h-[10vh] min-w-[50px] min-h-[50px] bg-blue-100 rounded-full flex items-center justify-center text-xl font-bold text-blue-600">
+                  {kidName.charAt(0).toUpperCase()}
+                </div>
+                <span className="font-black text-gray-700 text-base">{kidName}</span>
+              </div>
+              <div className="flex items-center gap-6">
+                <button 
+                  onClick={() => {
+                    setCurrentGame(null);
+                    setCurrentTab('trophy');
+                  }}
+                  className="flex items-center gap-2 bg-yellow-100 px-4 py-2 rounded-full hover:scale-105 transition-transform"
+                >
+                  <span className="text-yellow-500 text-xl">⭐</span>
+                  <span className="font-black text-yellow-600 text-base">{stars}</span>
+                </button>
+                <button 
+                  onClick={() => {
+                    setCurrentGame(null);
+                    setCurrentTab('dictionary');
+                  }}
+                  className="w-[10vh] h-[10vh] min-w-[50px] min-h-[50px] bg-blue-500 text-white rounded-full flex items-center justify-center shadow-sm hover:scale-105 transition-transform text-xl"
+                >
+                  📖
+                </button>
+              </div>
+            </div>
 
-            <motion.div
-              key="main-app"
-              initial={{ opacity: 0, y: 50 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="h-full w-full"
-            >
-              {renderTabContent()}
-              {!currentGame && (
-                <Taskbar currentTab={currentTab} setCurrentTab={(tab) => {
-                  setCurrentTab(tab);
-                  if (tab === 'home') setDoveMessage(`Welcome home, ${kidName.trim()}!`);
-                  if (tab === 'dictionary') setDoveMessage(`Let's learn new words, ${kidName.trim()}!`);
-                  if (tab === 'games') setDoveMessage(`Time to play, ${kidName.trim()}!`);
-                  if (tab === 'trophy') setDoveMessage(`Look at your progress, ${kidName.trim()}!`);
-                }} />
-              )}
-            </motion.div>
+            {/* Play Arena (65vh) */}
+            <div className="h-[65vh] relative w-full overflow-hidden">
+              {!currentGame && <DoveMascot isCheering={doveCheering} />}
+              <motion.div
+                key="main-app"
+                initial={{ opacity: 0, y: 50 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="h-full w-full"
+              >
+                {renderTabContent()}
+              </motion.div>
+            </div>
+
+            {/* Bottom Navigation (20vh) */}
+            <div className="h-[20vh] shrink-0 w-full bg-white/90 backdrop-blur-md border-t-4 border-gray-100 flex items-center justify-center gap-8 px-6 z-50">
+              <button 
+                onClick={() => {
+                  if (currentGame) {
+                    setCurrentGame(null);
+                  } else if (currentTab === 'games' && currentWorld) {
+                    setCurrentWorld(null);
+                  } else {
+                    setCurrentTab('home');
+                  }
+                }}
+                className="flex-1 max-w-[200px] h-[10vh] min-h-[64px] bg-gray-200 text-gray-600 rounded-[2rem] font-black text-base flex items-center justify-center shadow-sm hover:bg-gray-300 transition-colors"
+              >
+                BACK
+              </button>
+              <button 
+                onClick={() => {
+                  setCurrentGame(null);
+                  setCurrentWorld(null);
+                  setCurrentTab('home');
+                }}
+                className="flex-1 max-w-[200px] h-[10vh] min-h-[64px] bg-blue-500 text-white rounded-[2rem] font-black text-base flex items-center justify-center shadow-[0_6px_0_rgb(37,99,235)] hover:bg-blue-600 transition-colors active:translate-y-1 active:shadow-none"
+              >
+                HOME
+              </button>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

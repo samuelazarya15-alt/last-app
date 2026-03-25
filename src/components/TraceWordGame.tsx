@@ -91,7 +91,7 @@ export function TraceWordGame({ language, onBack, setDoveMessage, setDoveCheerin
       <div className="w-full flex justify-between items-center z-10 mb-4 mt-2">
         <button 
           onClick={onBack}
-          className="bg-white text-blue-500 font-black px-6 py-3 rounded-full shadow-[0_4px_0_rgb(203,213,225)] active:translate-y-1 active:shadow-none z-10"
+          className="bg-white text-blue-500 font-black px-6 py-3 rounded-full shadow-[0_4px_0_rgb(203,213,225)] active:translate-y-1 active:shadow-none z-10 text-sm"
         >
           ← Back
         </button>
@@ -107,9 +107,9 @@ export function TraceWordGame({ language, onBack, setDoveMessage, setDoveCheerin
       </div>
 
       <div className="text-center mb-12 z-10">
-        <h2 className="text-4xl font-black text-gray-800 mb-4">Trace the Word</h2>
+        <h2 className="text-base font-black text-gray-800 mb-4">Trace the Word</h2>
         <div className="bg-white px-8 py-4 rounded-full shadow-md inline-block">
-          <p className="text-2xl font-bold text-blue-600">{translation}</p>
+          <p className="text-base font-bold text-blue-600">{translation}</p>
         </div>
       </div>
 

@@ -236,7 +236,7 @@ export function StadiumGame({ language, onBack, setDoveMessage, setDoveCheering 
         className="relative z-10 bg-gray-900 border-4 border-gray-700 rounded-2xl p-3 shadow-2xl mb-4 w-full max-w-sm text-center"
       >
         <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 w-24 h-3 bg-gray-600 rounded-t-xl"></div>
-        <h2 className="text-4xl md:text-5xl font-black text-yellow-400 tracking-wider" style={{ textShadow: '0 0 20px rgba(250, 204, 21, 0.6)' }}>
+        <h2 className="text-base font-black text-yellow-400 tracking-wider" style={{ textShadow: '0 0 20px rgba(250, 204, 21, 0.6)' }}>
           {currentWord.tigrinya}
         </h2>
         
@@ -266,18 +266,20 @@ export function StadiumGame({ language, onBack, setDoveMessage, setDoveCheering 
       </div>
 
       {/* Football Buttons */}
-      <div className="relative z-10 flex flex-wrap justify-center gap-3 w-full max-w-sm">
+      <div className="fixed bottom-24 right-4 flex flex-col gap-4 z-50">
         {options.map((option, index) => {
           const isKicked = kickedOption === option;
           return (
             <motion.button
               key={index}
               animate={isKicked ? { 
-                y: -150, 
+                x: -150, 
+                y: -150,
                 scale: 0.5, 
                 rotate: 360,
                 opacity: 0
               } : { 
+                x: 0,
                 y: 0, 
                 scale: 1, 
                 rotate: 0,
@@ -288,11 +290,11 @@ export function StadiumGame({ language, onBack, setDoveMessage, setDoveCheering 
               whileTap={!isAnimating ? { scale: 0.95 } : {}}
               onClick={() => handleGuess(option)}
               disabled={isAnimating}
-              className={`rounded-full w-20 h-20 md:w-24 md:h-24 flex items-center justify-center text-sm md:text-base font-black border-4 active:translate-y-1.5 active:shadow-none transition-all relative overflow-hidden group ${getBallStyles()} ${isKicked ? 'z-50' : 'z-10'}`}
+              className={`rounded-full w-[56px] h-[56px] flex items-center justify-center text-sm font-black border-2 active:translate-y-1 active:shadow-none transition-all relative overflow-hidden group shadow-md ${getBallStyles()} ${isKicked ? 'z-50' : 'z-10'}`}
             >
               {/* Football pattern overlay */}
               <div className={`absolute inset-0 pointer-events-none flex items-center justify-center opacity-20 ${ballType === 'standard' ? 'text-black' : 'text-white'}`}>
-                <svg viewBox="0 0 100 100" className="w-[120%] h-[120%]">
+                <svg viewBox="0 0 100 100" className="w-full h-full object-cover">
                   <path d="M50 0 L95 35 L75 90 L25 90 L5 35 Z" fill="none" stroke="currentColor" strokeWidth="4"/>
                   <path d="M50 0 L50 45 M95 35 L65 60 M75 90 L50 65 M25 90 L35 60 M5 35 L35 45" stroke="currentColor" strokeWidth="4"/>
                   <polygon points="35,45 65,45 75,65 50,85 25,65" fill="currentColor" />
@@ -311,7 +313,7 @@ export function StadiumGame({ language, onBack, setDoveMessage, setDoveCheering 
                 <div className="absolute inset-0 bg-blue-100/30 backdrop-blur-[1px] pointer-events-none" />
               )}
 
-              <span className={`relative z-10 text-center px-1 leading-tight rounded-lg backdrop-blur-sm ${ballType === 'standard' ? 'bg-white/80 text-gray-800' : 'bg-black/20 text-white'}`}>
+              <span className={`relative z-10 text-center px-1 leading-tight rounded-lg backdrop-blur-sm text-[10px] ${ballType === 'standard' ? 'bg-white/80 text-gray-800' : 'bg-black/20 text-white'}`}>
                 {option}
               </span>
             </motion.button>

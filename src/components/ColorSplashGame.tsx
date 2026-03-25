@@ -123,8 +123,8 @@ export function ColorSplashGame({ language, onBack, setDoveMessage, setDoveCheer
   if (gameOver) {
     return (
       <div className="w-full h-full flex flex-col items-center justify-center bg-sky-50 p-4">
-        <h2 className="text-4xl font-black text-blue-600 mb-4">Game Over!</h2>
-        <p className="text-2xl font-bold text-gray-700 mb-8">Score: {score}</p>
+        <h2 className="text-base font-black text-blue-600 mb-4">Game Over!</h2>
+        <p className="text-sm font-bold text-gray-700 mb-8">Score: {score}</p>
         <div className="flex gap-4">
           <button 
             onClick={() => {
@@ -134,13 +134,13 @@ export function ColorSplashGame({ language, onBack, setDoveMessage, setDoveCheer
               setSplashes([]);
               spawnNextColor();
             }}
-            className="bg-green-500 text-white px-8 py-4 rounded-2xl font-black text-xl shadow-[0_6px_0_rgb(21,128,61)] active:translate-y-1 active:shadow-none"
+            className="bg-green-500 text-white px-8 py-4 rounded-2xl font-black text-sm shadow-[0_6px_0_rgb(21,128,61)] active:translate-y-1 active:shadow-none"
           >
             Play Again
           </button>
           <button 
             onClick={onBack}
-            className="bg-gray-400 text-white px-8 py-4 rounded-2xl font-black text-xl shadow-[0_6px_0_rgb(107,114,128)] active:translate-y-1 active:shadow-none"
+            className="bg-gray-400 text-white px-8 py-4 rounded-2xl font-black text-sm shadow-[0_6px_0_rgb(107,114,128)] active:translate-y-1 active:shadow-none"
           >
             Back to Games
           </button>
@@ -172,15 +172,15 @@ export function ColorSplashGame({ language, onBack, setDoveMessage, setDoveCheer
       <div className="w-full flex justify-between items-center z-10 mb-4">
         <button 
           onClick={onBack}
-          className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-md text-2xl"
+          className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-md text-sm"
         >
           🏠
         </button>
         <div className="flex gap-4">
-          <div className="bg-white px-4 py-2 rounded-2xl shadow-sm font-bold text-blue-600">
+          <div className="bg-white px-4 py-2 rounded-2xl shadow-sm font-bold text-blue-600 text-sm">
             Level {level}
           </div>
-          <div className="bg-white px-4 py-2 rounded-2xl shadow-sm font-bold text-green-600">
+          <div className="bg-white px-4 py-2 rounded-2xl shadow-sm font-bold text-green-600 text-sm">
             Score: {score}
           </div>
         </div>
@@ -193,7 +193,7 @@ export function ColorSplashGame({ language, onBack, setDoveMessage, setDoveCheer
       </div>
 
       <div className="bg-white/90 backdrop-blur-sm p-4 rounded-2xl shadow-md border-2 border-white text-center mb-8 z-10">
-        <h2 className="text-3xl font-black text-blue-500">
+        <h2 className="text-base font-black text-blue-500">
           Find: {targetColor?.translations[language as keyof typeof targetColor.translations] || targetColor?.english}
         </h2>
       </div>
@@ -210,14 +210,14 @@ export function ColorSplashGame({ language, onBack, setDoveMessage, setDoveCheer
                 whileHover={{ scale: 1.1, rotate: Math.random() * 10 - 5 }}
                 whileTap={{ scale: 0.9 }}
                 onClick={() => handleSplash(opt)}
-                className="w-32 h-32 rounded-[2rem] shadow-xl border-4 border-white/50 flex flex-col items-center justify-center gap-2 relative overflow-hidden"
+                className="w-[48px] h-[48px] rounded-xl shadow-xl border-2 border-white/50 flex flex-col items-center justify-center gap-2 relative overflow-hidden"
                 style={{ backgroundColor: getColorStyle(opt.english) }}
               >
                 {/* Paint drip effect */}
-                <div className="absolute top-0 left-4 w-4 h-12 bg-white/20 rounded-b-full" />
-                <div className="absolute top-0 right-8 w-3 h-8 bg-white/20 rounded-b-full" />
+                <div className="absolute top-0 left-2 w-2 h-6 bg-white/20 rounded-b-full" />
+                <div className="absolute top-0 right-4 w-1 h-4 bg-white/20 rounded-b-full" />
                 
-                <span className="text-4xl drop-shadow-md z-10">{opt.emoji}</span>
+                <span className="text-2xl drop-shadow-md z-10">{opt.emoji}</span>
               </motion.button>
             ))}
           </AnimatePresence>

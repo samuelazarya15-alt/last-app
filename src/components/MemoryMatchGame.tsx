@@ -192,7 +192,7 @@ export function MemoryMatchGame({ language, onBack, setDoveMessage, setDoveCheer
                 className="absolute inset-0 bg-white rounded-xl border-4 border-purple-300 shadow-md flex items-center justify-center p-2 text-center"
                 style={{ backfaceVisibility: "hidden", transform: "rotateY(180deg)" }}
               >
-                <span className={`font-black ${card.type === 'native' ? 'text-2xl text-purple-800' : 'text-xl text-blue-600'}`}>
+                <span className={`font-black ${card.type === 'native' ? 'text-base text-purple-800' : 'text-sm text-blue-600'}`}>
                   {card.text}
                 </span>
               </div>

@@ -1,6 +1,3 @@
-import { db, auth } from './firebase';
-import { collection, doc, setDoc, getDoc, getDocs, query, where, orderBy, limit, addDoc, serverTimestamp, updateDoc } from 'firebase/firestore';
-
 export interface GameSession {
   id?: string;
   userId: string;
@@ -20,8 +17,22 @@ export interface UserStats {
   updatedAt?: any;
 }
 
+export interface Goal {
+  id?: string;
+  userId: string;
+  type: string;
+  target: number;
+  current: number;
+  completed: boolean;
+  createdAt?: any;
+}
+
 export const getUserId = () => {
-  return auth.currentUser?.uid || 'anonymous';
+  return localStorage.getItem('selam_user_id') || 'anonymous';
+};
+
+export const setUserId = (id: string) => {
+  localStorage.setItem('selam_user_id', id);
 };
 
 export const logGameSession = async (gameType: string, score: number, duration: number) => {
@@ -29,13 +40,16 @@ export const logGameSession = async (gameType: string, score: number, duration: 
   if (userId === 'anonymous') return;
   
   try {
-    await addDoc(collection(db, 'sessions'), {
-      userId: userId,
+    const sessions = JSON.parse(localStorage.getItem('selam_sessions') || '[]');
+    sessions.push({
+      id: Date.now().toString(),
+      userId,
       gameId: gameType,
-      score: score,
-      duration: duration,
-      timestamp: serverTimestamp()
+      score,
+      duration,
+      timestamp: new Date().toISOString()
     });
+    localStorage.setItem('selam_sessions', JSON.stringify(sessions));
 
     // Update XP and Coins (Stars)
     await updateStats(score, Math.floor(score / 10));
@@ -49,31 +63,29 @@ export const updateStats = async (score: number, starsGain: number = 0) => {
   if (userId === 'anonymous') return;
   
   try {
-    const userRef = doc(db, 'users', userId);
-    const userSnap = await getDoc(userRef);
-
-    if (!userSnap.exists()) {
+    const statsStr = localStorage.getItem(`selam_user_${userId}`);
+    if (!statsStr) {
       // Create initial stats
-      await setDoc(userRef, {
+      const newStats: UserStats = {
         uid: userId,
-        name: auth.currentUser?.displayName || 'Player',
-        language: 'english',
+        name: localStorage.getItem('selam_user_name') || 'Player',
+        language: localStorage.getItem('selam_user_language') || 'english',
         stars: starsGain,
         level: 1,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
-      });
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+      localStorage.setItem(`selam_user_${userId}`, JSON.stringify(newStats));
     } else {
       // Update existing stats
-      const stats = userSnap.data() as UserStats;
+      const stats = JSON.parse(statsStr) as UserStats;
       const newStars = (stats.stars || 0) + starsGain;
       const newLevel = Math.floor(newStars / 1000) + 1;
 
-      await updateDoc(userRef, {
-        stars: newStars,
-        level: newLevel,
-        updatedAt: serverTimestamp()
-      });
+      stats.stars = newStars;
+      stats.level = newLevel;
+      stats.updatedAt = new Date().toISOString();
+      localStorage.setItem(`selam_user_${userId}`, JSON.stringify(stats));
     }
   } catch (err) {
     console.error('Error updating stats:', err);
@@ -85,11 +97,9 @@ export const getUserStats = async (): Promise<UserStats | null> => {
   if (userId === 'anonymous') return null;
   
   try {
-    const userRef = doc(db, 'users', userId);
-    const userSnap = await getDoc(userRef);
-    
-    if (userSnap.exists()) {
-      return userSnap.data() as UserStats;
+    const statsStr = localStorage.getItem(`selam_user_${userId}`);
+    if (statsStr) {
+      return JSON.parse(statsStr) as UserStats;
     }
     return null;
   } catch (err) {
@@ -103,44 +113,26 @@ export const getGameHistory = async (limitCount = 10): Promise<GameSession[]> =>
   if (userId === 'anonymous') return [];
   
   try {
-    const q = query(
-      collection(db, 'sessions'),
-      where('userId', '==', userId),
-      orderBy('timestamp', 'desc'),
-      limit(limitCount)
-    );
-    
-    const querySnapshot = await getDocs(q);
-    return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as GameSession));
+    const sessions = JSON.parse(localStorage.getItem('selam_sessions') || '[]') as GameSession[];
+    return sessions
+      .filter(s => s.userId === userId)
+      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+      .slice(0, limitCount);
   } catch (err) {
     console.error('Error fetching game history:', err);
     return [];
   }
 };
 
-export interface Goal {
-  id?: string;
-  userId: string;
-  type: string;
-  target: number;
-  current: number;
-  completed: boolean;
-  createdAt?: any;
-}
-
 export const getUserGoals = async (): Promise<Goal[]> => {
   const userId = getUserId();
   if (userId === 'anonymous') return [];
   
   try {
-    const q = query(
-      collection(db, 'goals'),
-      where('userId', '==', userId),
-      orderBy('createdAt', 'desc')
-    );
-    
-    const querySnapshot = await getDocs(q);
-    return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Goal));
+    const goals = JSON.parse(localStorage.getItem('selam_goals') || '[]') as Goal[];
+    return goals
+      .filter(g => g.userId === userId)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   } catch (err) {
     console.error('Error fetching user goals:', err);
     return [];
@@ -152,14 +144,17 @@ export const setGoal = async (goalType: string, targetValue: number) => {
   if (userId === 'anonymous') return;
   
   try {
-    await addDoc(collection(db, 'goals'), {
-      userId: userId,
+    const goals = JSON.parse(localStorage.getItem('selam_goals') || '[]');
+    goals.push({
+      id: Date.now().toString(),
+      userId,
       type: goalType,
       target: targetValue,
       current: 0,
       completed: false,
-      createdAt: serverTimestamp()
+      createdAt: new Date().toISOString()
     });
+    localStorage.setItem('selam_goals', JSON.stringify(goals));
   } catch (err) {
     console.error('Error setting goal:', err);
   }

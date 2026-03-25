@@ -103,7 +103,7 @@ export function MatchGame({ language, onBack, setDoveMessage, setDoveCheering }:
       <div className="w-full flex justify-between items-center z-10 mb-4 mt-2">
         <button 
           onClick={onBack}
-          className="bg-white text-purple-500 font-black px-6 py-3 rounded-full shadow-[0_4px_0_rgb(216,180,254)] active:translate-y-1 active:shadow-none z-10"
+          className="bg-white text-purple-500 font-black px-6 py-3 rounded-full shadow-[0_4px_0_rgb(216,180,254)] active:translate-y-1 active:shadow-none z-10 text-sm"
         >
           ← Back
         </button>
@@ -119,7 +119,7 @@ export function MatchGame({ language, onBack, setDoveMessage, setDoveCheering }:
       </div>
 
       <div className="text-center mb-12 z-10">
-        <h2 className="text-4xl font-black text-gray-800 mb-4">Match the Words</h2>
+        <h2 className="text-base font-black text-gray-800 mb-4">Match the Words</h2>
       </div>
 
       <div className="flex w-full max-w-4xl gap-8 z-10">
@@ -137,7 +137,7 @@ export function MatchGame({ language, onBack, setDoveMessage, setDoveCheering }:
                 whileTap={!isMatched ? { scale: 0.98 } : {}}
                 onClick={() => !isMatched && !isGameOver && setSelectedEnglish(word.english)}
                 disabled={isMatched || isGameOver}
-                className={`p-6 rounded-2xl font-black text-2xl border-4 transition-all ${
+                className={`p-6 rounded-2xl font-black text-base border-4 transition-all ${
                   isMatched 
                     ? 'bg-green-100 border-green-300 text-green-400 opacity-50 cursor-not-allowed' 
                     : isSelected
@@ -166,7 +166,7 @@ export function MatchGame({ language, onBack, setDoveMessage, setDoveCheering }:
                 whileTap={!isMatched ? { scale: 0.98 } : {}}
                 onClick={() => !isMatched && !isGameOver && setSelectedTigrinya(word.tigrinya)}
                 disabled={isMatched || isGameOver}
-                className={`p-6 rounded-2xl font-black text-3xl border-4 transition-all ${
+                className={`p-6 rounded-2xl font-black text-base border-4 transition-all ${
                   isMatched 
                     ? 'bg-green-100 border-green-300 text-green-400 opacity-50 cursor-not-allowed' 
                     : isSelected

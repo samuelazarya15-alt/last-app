@@ -17,18 +17,19 @@ export function DoveMascot({ isCheering }: { isCheering?: boolean }) {
   };
 
   return (
-    <div className="fixed top-4 right-4 z-50 flex flex-col items-center gap-2">
+    <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-40 flex flex-col items-center gap-2 pointer-events-none w-full max-w-[120px] mt-4">
       <button 
         onClick={toggleMute}
-        className="bg-white/80 backdrop-blur p-2 rounded-full shadow-md text-blue-500 hover:bg-white transition-colors border-2 border-blue-100"
+        className="bg-white/80 backdrop-blur p-2 rounded-full shadow-md text-blue-500 hover:bg-white transition-colors border-2 border-blue-100 pointer-events-auto absolute -right-12 top-0 min-w-[50px] min-h-[50px] flex items-center justify-center"
         title={isMuted ? "Unmute Voice" : "Mute Voice"}
       >
         {isMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
       </button>
       
-      <div className="pointer-events-none">
+      <div className="pointer-events-none w-full flex justify-center">
         <motion.div 
-          className="relative w-24 h-24 flex items-center justify-center"
+          className="relative flex items-center justify-center w-full"
+          style={{ maxHeight: '20vh' }}
           animate={
             isCheering 
               ? { y: [0, -15, 0], rotate: [0, -10, 10, 0], scale: [1, 1.1, 1] } 
@@ -45,7 +46,7 @@ export function DoveMascot({ isCheering }: { isCheering?: boolean }) {
           <img 
             src="https://em-content.zobj.net/source/apple/354/dove_1f54a-fe0f.png" 
             alt="3D Dove Mascot" 
-            className="w-full h-full object-contain drop-shadow-2xl"
+            className="h-[20vh] w-auto max-w-full object-contain drop-shadow-2xl"
           />
           
           {/* Speaking Indicator */}
