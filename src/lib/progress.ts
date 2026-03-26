@@ -1,3 +1,18 @@
+import { 
+  collection, 
+  doc, 
+  setDoc, 
+  getDoc, 
+  getDocs, 
+  query, 
+  where, 
+  orderBy, 
+  limit, 
+  serverTimestamp,
+  getDocFromServer
+} from 'firebase/firestore';
+import { db, auth } from './firebase';
+
 export interface GameSession {
   id?: string;
   userId: string;
@@ -13,6 +28,9 @@ export interface UserStats {
   language: string;
   stars: number;
   level: number;
+  streak: number;
+  total_xp: number;
+  role: 'admin' | 'user';
   createdAt?: any;
   updatedAt?: any;
 }
@@ -27,135 +45,217 @@ export interface Goal {
   createdAt?: any;
 }
 
-export const getUserId = () => {
-  return localStorage.getItem('selam_user_id') || 'anonymous';
-};
+enum OperationType {
+  CREATE = 'create',
+  UPDATE = 'update',
+  DELETE = 'delete',
+  LIST = 'list',
+  GET = 'get',
+  WRITE = 'write',
+}
 
-export const setUserId = (id: string) => {
-  localStorage.setItem('selam_user_id', id);
-};
+interface FirestoreErrorInfo {
+  error: string;
+  operationType: OperationType;
+  path: string | null;
+  authInfo: {
+    userId: string | undefined;
+    email: string | null | undefined;
+    emailVerified: boolean | undefined;
+    isAnonymous: boolean | undefined;
+    tenantId: string | null | undefined;
+    providerInfo: {
+      providerId: string;
+      displayName: string | null;
+      email: string | null;
+      photoUrl: string | null;
+    }[];
+  }
+}
+
+function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
+  const errInfo: FirestoreErrorInfo = {
+    error: error instanceof Error ? error.message : String(error),
+    authInfo: {
+      userId: auth.currentUser?.uid,
+      email: auth.currentUser?.email,
+      emailVerified: auth.currentUser?.emailVerified,
+      isAnonymous: auth.currentUser?.isAnonymous,
+      tenantId: auth.currentUser?.tenantId,
+      providerInfo: auth.currentUser?.providerData.map(provider => ({
+        providerId: provider.providerId,
+        displayName: provider.displayName,
+        email: provider.email,
+        photoUrl: provider.photoURL
+      })) || []
+    },
+    operationType,
+    path
+  };
+  console.error('Firestore Error: ', JSON.stringify(errInfo));
+  throw new Error(JSON.stringify(errInfo));
+}
+
+// Connection test
+async function testConnection() {
+  try {
+    await getDocFromServer(doc(db, 'test', 'connection'));
+  } catch (error) {
+    if(error instanceof Error && error.message.includes('the client is offline')) {
+      console.error("Please check your Firebase configuration. ");
+    }
+  }
+}
+testConnection();
 
 export const logGameSession = async (gameType: string, score: number, duration: number) => {
-  const userId = getUserId();
-  if (userId === 'anonymous') return;
+  const user = auth.currentUser;
+  if (!user) return;
   
+  const path = 'sessions';
   try {
-    const sessions = JSON.parse(localStorage.getItem('selam_sessions') || '[]');
-    sessions.push({
-      id: Date.now().toString(),
-      userId,
+    const sessionRef = doc(collection(db, path));
+    const sessionData: GameSession = {
+      userId: user.uid,
       gameId: gameType,
       score,
       duration,
-      timestamp: new Date().toISOString()
-    });
-    localStorage.setItem('selam_sessions', JSON.stringify(sessions));
+      timestamp: serverTimestamp()
+    };
+    await setDoc(sessionRef, sessionData);
 
-    // Update XP and Coins (Stars)
-    await updateStats(score, Math.floor(score / 10));
+    // Update Stats
+    await updateStats(score);
   } catch (err) {
-    console.error('Error logging game session:', err);
+    handleFirestoreError(err, OperationType.WRITE, path);
   }
 };
 
-export const updateStats = async (score: number, starsGain: number = 0) => {
-  const userId = getUserId();
-  if (userId === 'anonymous') return;
+export const updateStats = async (xpGain: number = 0) => {
+  const user = auth.currentUser;
+  if (!user) return;
   
+  const path = `users/${user.uid}`;
   try {
-    const statsStr = localStorage.getItem(`selam_user_${userId}`);
-    if (!statsStr) {
-      // Create initial stats
+    const userRef = doc(db, 'users', user.uid);
+    const userDoc = await getDoc(userRef);
+    
+    if (!userDoc.exists()) {
       const newStats: UserStats = {
-        uid: userId,
-        name: localStorage.getItem('selam_user_name') || 'Player',
-        language: localStorage.getItem('selam_user_language') || 'english',
-        stars: starsGain,
+        uid: user.uid,
+        name: user.displayName || 'Player',
+        language: 'english',
+        stars: 0,
         level: 1,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+        streak: 1,
+        total_xp: Math.max(0, xpGain),
+        role: 'user',
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
       };
-      localStorage.setItem(`selam_user_${userId}`, JSON.stringify(newStats));
+      await setDoc(userRef, newStats);
     } else {
-      // Update existing stats
-      const stats = JSON.parse(statsStr) as UserStats;
-      const newStars = (stats.stars || 0) + starsGain;
-      const newLevel = Math.floor(newStars / 1000) + 1;
+      const stats = userDoc.data() as UserStats;
+      const newTotalXp = (stats.total_xp || 0) + xpGain;
+      const newStars = Math.floor(newTotalXp / 10);
+      const newLevel = Math.floor(newTotalXp / 1000) + 1;
 
-      stats.stars = newStars;
-      stats.level = newLevel;
-      stats.updatedAt = new Date().toISOString();
-      localStorage.setItem(`selam_user_${userId}`, JSON.stringify(stats));
+      await setDoc(userRef, {
+        ...stats,
+        total_xp: newTotalXp,
+        stars: newStars,
+        level: newLevel,
+        updatedAt: serverTimestamp()
+      });
     }
   } catch (err) {
-    console.error('Error updating stats:', err);
+    handleFirestoreError(err, OperationType.WRITE, path);
   }
 };
 
 export const getUserStats = async (): Promise<UserStats | null> => {
-  const userId = getUserId();
-  if (userId === 'anonymous') return null;
+  const user = auth.currentUser;
+  if (!user) return null;
   
+  const path = `users/${user.uid}`;
   try {
-    const statsStr = localStorage.getItem(`selam_user_${userId}`);
-    if (statsStr) {
-      return JSON.parse(statsStr) as UserStats;
+    const userDoc = await getDoc(doc(db, 'users', user.uid));
+    if (userDoc.exists()) {
+      const data = userDoc.data() as UserStats;
+      // Map coins for Trophy component
+      return { ...data, coins: data.stars } as any;
     }
     return null;
   } catch (err) {
-    console.error('Error fetching stats:', err);
+    handleFirestoreError(err, OperationType.GET, path);
     return null;
   }
 };
 
 export const getGameHistory = async (limitCount = 10): Promise<GameSession[]> => {
-  const userId = getUserId();
-  if (userId === 'anonymous') return [];
+  const user = auth.currentUser;
+  if (!user) return [];
   
+  const path = 'sessions';
   try {
-    const sessions = JSON.parse(localStorage.getItem('selam_sessions') || '[]') as GameSession[];
-    return sessions
-      .filter(s => s.userId === userId)
-      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
-      .slice(0, limitCount);
+    const q = query(
+      collection(db, path),
+      where('userId', '==', user.uid),
+      orderBy('timestamp', 'desc'),
+      limit(limitCount)
+    );
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.docs.map(doc => {
+      const data = doc.data();
+      return { 
+        id: doc.id, 
+        ...data,
+        game_type: data.gameId, // Map for Trophy component
+        created_at: data.timestamp?.toDate?.()?.toISOString() || new Date().toISOString()
+      } as any;
+    });
   } catch (err) {
-    console.error('Error fetching game history:', err);
+    handleFirestoreError(err, OperationType.LIST, path);
     return [];
   }
 };
 
 export const getUserGoals = async (): Promise<Goal[]> => {
-  const userId = getUserId();
-  if (userId === 'anonymous') return [];
+  const user = auth.currentUser;
+  if (!user) return [];
   
+  const path = 'goals';
   try {
-    const goals = JSON.parse(localStorage.getItem('selam_goals') || '[]') as Goal[];
-    return goals
-      .filter(g => g.userId === userId)
-      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    const q = query(
+      collection(db, path),
+      where('userId', '==', user.uid),
+      orderBy('createdAt', 'desc')
+    );
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Goal));
   } catch (err) {
-    console.error('Error fetching user goals:', err);
+    handleFirestoreError(err, OperationType.LIST, path);
     return [];
   }
 };
 
 export const setGoal = async (goalType: string, targetValue: number) => {
-  const userId = getUserId();
-  if (userId === 'anonymous') return;
+  const user = auth.currentUser;
+  if (!user) return;
   
+  const path = 'goals';
   try {
-    const goals = JSON.parse(localStorage.getItem('selam_goals') || '[]');
-    goals.push({
-      id: Date.now().toString(),
-      userId,
+    const goalRef = doc(collection(db, path));
+    const goalData: Goal = {
+      userId: user.uid,
       type: goalType,
       target: targetValue,
       current: 0,
       completed: false,
-      createdAt: new Date().toISOString()
-    });
-    localStorage.setItem('selam_goals', JSON.stringify(goals));
+      createdAt: serverTimestamp()
+    };
+    await setDoc(goalRef, goalData);
   } catch (err) {
-    console.error('Error setting goal:', err);
+    handleFirestoreError(err, OperationType.WRITE, path);
   }
 };

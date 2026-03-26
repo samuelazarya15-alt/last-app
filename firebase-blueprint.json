@@ -10,11 +10,13 @@
         "language": { "type": "string" },
         "stars": { "type": "number" },
         "level": { "type": "number" },
+        "streak": { "type": "number" },
+        "total_xp": { "type": "number" },
         "role": { "type": "string", "enum": ["admin", "user"] },
         "createdAt": { "type": "string", "format": "date-time" },
         "updatedAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["uid", "name", "language", "stars", "level", "role", "createdAt"]
+      "required": ["uid", "name", "language", "stars", "level", "streak", "total_xp", "role", "createdAt"]
     },
     "GameSession": {
       "title": "GameSession",
@@ -28,6 +30,20 @@
         "timestamp": { "type": "string", "format": "date-time" }
       },
       "required": ["userId", "gameId", "score", "duration", "timestamp"]
+    },
+    "Goal": {
+      "title": "Goal",
+      "description": "A user-defined goal",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "type": { "type": "string" },
+        "target": { "type": "number" },
+        "current": { "type": "number" },
+        "completed": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "type", "target", "current", "completed", "createdAt"]
     }
   },
   "firestore": {
@@ -38,6 +54,10 @@
     "/sessions/{sessionId}": {
       "schema": { "$ref": "#/entities/GameSession" },
       "description": "Game sessions"
+    },
+    "/goals/{goalId}": {
+      "schema": { "$ref": "#/entities/Goal" },
+      "description": "User goals"
     }
   }
 }

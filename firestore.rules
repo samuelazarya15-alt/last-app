@@ -14,6 +14,9 @@ service cloud.firestore {
     //   - language: string (required) - Selected language
     //   - stars: number (required) - Total stars
     //   - level: number (required) - Current level
+    //   - streak: number (required) - Daily streak
+    //   - total_xp: number (required) - Total experience points
+    //   - role: string (required) - User role (admin/user)
     //   - createdAt: timestamp (required) - Creation time
     //   - updatedAt: timestamp (optional) - Last update time
     //
@@ -28,6 +31,18 @@ service cloud.firestore {
     //
     // ===============================================================
 
+    // Collection: goals
+    // Document ID: {goalId}
+    // Fields:
+    //   - userId: string (required) - User ID
+    //   - type: string (required) - Goal type
+    //   - target: number (required) - Target value
+    //   - current: number (required) - Current value
+    //   - completed: boolean (required) - Completion status
+    //   - createdAt: timestamp (required) - Creation time
+    //
+    // ===============================================================
+
     // Helper Functions
     function isAuthenticated() {
       return request.auth != null;
@@ -35,6 +50,12 @@ service cloud.firestore {
 
     function isOwner(userId) {
       return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() &&
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+          (request.auth.token.email == "samuelazarya15@gmail.com" && request.auth.token.email_verified == true));
     }
 
     function isDocOwner() {
@@ -65,6 +86,9 @@ service cloud.firestore {
              data.language is string && data.language.size() > 0 && data.language.size() < 20 &&
              data.stars is number && data.stars >= 0 &&
              data.level is number && data.level >= 1 &&
+             data.streak is number && data.streak >= 0 &&
+             data.total_xp is number && data.total_xp >= 0 &&
+             data.role in ['admin', 'user'] &&
              data.createdAt is timestamp;
     }
 
@@ -76,17 +100,33 @@ service cloud.firestore {
              data.timestamp is timestamp;
     }
 
+    function isValidGoal(data) {
+      return data.userId is string && data.userId.size() > 0 && data.userId.size() < 100 &&
+             data.type is string && data.type.size() > 0 && data.type.size() < 50 &&
+             data.target is number && data.target > 0 &&
+             data.current is number && data.current >= 0 &&
+             data.completed is bool &&
+             data.createdAt is timestamp;
+    }
+
     match /users/{userId} {
-      allow read: if isOwner(userId);
-      allow create: if isOwner(userId) && hasRequiredFields(['uid', 'name', 'language', 'stars', 'level', 'createdAt']) && isValidUser(request.resource.data) && uidUnchanged();
-      allow update: if isOwner(userId) && isValidUser(request.resource.data) && uidNotModified() && request.resource.data.createdAt == resource.data.createdAt;
-      allow delete: if isOwner(userId);
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isAuthenticated() && isOwner(userId) && hasRequiredFields(['uid', 'name', 'language', 'stars', 'level', 'streak', 'total_xp', 'role', 'createdAt']) && isValidUser(request.resource.data) && uidUnchanged() && (request.resource.data.role == 'user' || isAdmin());
+      allow update: if isAuthenticated() && ((isOwner(userId) && isValidUser(request.resource.data) && uidNotModified() && request.resource.data.createdAt == resource.data.createdAt && request.resource.data.role == resource.data.role) || isAdmin());
+      allow delete: if isAdmin();
     }
 
     match /sessions/{sessionId} {
       allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
       allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid && hasRequiredFields(['userId', 'gameId', 'score', 'duration', 'timestamp']) && isValidSession(request.resource.data);
       allow update: if false; // Sessions are immutable
+      allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+    }
+
+    match /goals/{goalId} {
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid && hasRequiredFields(['userId', 'type', 'target', 'current', 'completed', 'createdAt']) && isValidGoal(request.resource.data);
+      allow update: if isAuthenticated() && resource.data.userId == request.auth.uid && isValidGoal(request.resource.data) && request.resource.data.userId == resource.data.userId && request.resource.data.createdAt == resource.data.createdAt;
       allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
     }
   }

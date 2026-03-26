@@ -2,6 +2,7 @@ export class VoiceCoach {
   private name: string = '';
   private synth = window.speechSynthesis;
   private onSpeakStateChange: ((isSpeaking: boolean) => void) | null = null;
+  private onMuteStateChange: ((isMuted: boolean) => void) | null = null;
   private isMuted: boolean = false; // Default to unmuted for better UX if user interacts
   private audioContext: AudioContext | null = null;
   private audioBuffers: Map<string, AudioBuffer> = new Map();
@@ -100,6 +101,10 @@ export class VoiceCoach {
     this.onSpeakStateChange = listener;
   }
 
+  setMuteListener(listener: (isMuted: boolean) => void) {
+    this.onMuteStateChange = listener;
+  }
+
   toggleMute() {
     this.isMuted = !this.isMuted;
     if (this.isMuted) {
@@ -109,6 +114,7 @@ export class VoiceCoach {
     } else {
       if (this.bgMusic) this.bgMusic.play().catch(() => {});
     }
+    this.onMuteStateChange?.(this.isMuted);
     return this.isMuted;
   }
 

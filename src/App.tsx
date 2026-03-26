@@ -23,14 +23,28 @@ import { HideAndSeekGame } from './components/HideAndSeekGame';
 import { WordBridgeGame } from './components/WordBridgeGame';
 import { DressUpGame } from './components/DressUpGame';
 import { GeezGravityGame } from './components/GeezGravityGame';
+import { TransportRaceGame } from './components/TransportRaceGame';
+import { VegetableGardenGame } from './components/VegetableGardenGame';
+import { ShapeSorterGame } from './components/ShapeSorterGame';
+import { HoneyBeeGame } from './components/HoneyBeeGame';
+import { SunMoonGame } from './components/SunMoonGame';
+import { CountingSheepGame } from './components/CountingSheepGame';
+import { AlphabetBalloonGame } from './components/AlphabetBalloonGame';
+import { BodyPartsGame } from './components/BodyPartsGame';
+import { ClockTowerGame } from './components/ClockTowerGame';
+import { CoffeeCeremonyGame } from './components/CoffeeCeremonyGame';
+import { GrandparentGame } from './components/GrandparentGame';
 import { Taskbar } from './components/Taskbar';
 import { SettingsModal } from './components/SettingsModal';
 import { Home } from './components/Home';
 import { Learn } from './components/Learn';
 import { Trophy } from './components/Trophy';
 import { Intro } from './components/Intro';
+import { MuteButton } from './components/MuteButton';
 import { voiceCoach } from './lib/VoiceCoach';
-import { Settings, ArrowLeft, Home as HomeIcon, BookOpen, Trophy as TrophyIcon, Play } from 'lucide-react';
+import { auth, signInWithGoogle } from './lib/firebase';
+import { onAuthStateChanged, User } from 'firebase/auth';
+import { Settings, ArrowLeft, Home as HomeIcon, BookOpen, Trophy as TrophyIcon, Play, LogIn } from 'lucide-react';
 
 const LANGUAGES = [
   { code: 'english', name: 'English', flag: '🇬🇧', color: 'bg-blue-400', shadow: 'shadow-[0_8px_0_rgb(59,130,246)]' },
@@ -87,7 +101,9 @@ const GAMES = [
 ];
 
 export default function App() {
-  const [step, setStep] = useState<'intro' | 'name' | 'language' | 'app'>('intro');
+  const [user, setUser] = useState<User | null>(null);
+  const [isAuthReady, setIsAuthReady] = useState(false);
+  const [step, setStep] = useState<'intro' | 'auth' | 'name' | 'language' | 'app'>('intro');
   const [kidName, setKidName] = useState('');
   const [language, setLanguage] = useState<string | null>(null);
   const [currentTab, setCurrentTab] = useState('games');
@@ -96,6 +112,29 @@ export default function App() {
   const [doveCheering, setDoveCheering] = useState(false);
   const [stars, setStars] = useState(0);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (u) => {
+      setUser(u);
+      setIsAuthReady(true);
+      if (u) {
+        // If logged in, we can skip name/language if we already have them
+        import('./lib/progress').then(({ getUserStats }) => {
+          getUserStats().then(stats => {
+            if (stats) {
+              setKidName(stats.name);
+              setLanguage(stats.language);
+              setStars(stats.stars);
+              setStep('app');
+            } else if (step === 'auth') {
+              setStep('name');
+            }
+          });
+        });
+      }
+    });
+    return () => unsubscribe();
+  }, []);
 
   useEffect(() => {
     if (step === 'app') {
@@ -112,6 +151,14 @@ export default function App() {
     voiceCoach.speak(msg, language || 'english');
   }, [language]);
 
+  if (!isAuthReady) {
+    return (
+      <div className="w-full max-w-md mx-auto h-screen bg-sky-200 flex items-center justify-center">
+        <div className="animate-bounce text-4xl">🕊️</div>
+      </div>
+    );
+  }
+
   const handleNameSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (kidName.trim()) {
@@ -121,11 +168,18 @@ export default function App() {
     }
   };
 
-  const handleLanguageSelect = (langCode: string) => {
+  const handleLanguageSelect = async (langCode: string) => {
     voiceCoach.playClick();
     setLanguage(langCode);
     setStep('app');
     setDoveMessage(`Great choice, ${kidName.trim()}! Let's start learning. Check out your progress or play a game!`);
+    
+    // Save initial stats to Firestore if logged in
+    if (user) {
+      import('./lib/progress').then(({ updateStats }) => {
+        updateStats(0); // This will create the user doc with current name/language
+      });
+    }
   };
 
   const renderTabContent = () => {
@@ -174,6 +228,17 @@ export default function App() {
         case 'bridge': return <WordBridgeGame {...commonProps} />;
         case 'dressup': return <DressUpGame {...commonProps} />;
         case 'geezgravity': return <GeezGravityGame {...commonProps} />;
+        case 'transport': return <TransportRaceGame {...commonProps} />;
+        case 'garden': return <VegetableGardenGame {...commonProps} />;
+        case 'shapes': return <ShapeSorterGame {...commonProps} />;
+        case 'honey': return <HoneyBeeGame {...commonProps} />;
+        case 'sunmoon': return <SunMoonGame {...commonProps} />;
+        case 'sheep': return <CountingSheepGame {...commonProps} />;
+        case 'balloon': return <AlphabetBalloonGame {...commonProps} />;
+        case 'body': return <BodyPartsGame {...commonProps} />;
+        case 'clock': return <ClockTowerGame {...commonProps} />;
+        case 'coffee': return <CoffeeCeremonyGame {...commonProps} />;
+        case 'grandparent': return <GrandparentGame {...commonProps} />;
         default: {
           const game = GAMES.find(g => g.id === currentGame);
           return renderPlaceholder(game?.name || 'Game');
@@ -235,21 +300,75 @@ export default function App() {
       <AnimatePresence mode="wait">
         {step === 'intro' && (
           <Intro key="intro" onStart={() => {
-            setStep('name');
-            setDoveMessage("Hi! What's your name?");
+            voiceCoach.playClick();
+            setStep(user ? 'name' : 'auth');
+            setDoveMessage("Hi! Let's get started!");
           }} />
         )}
 
+        {step === 'auth' && (
+          <div className="h-full w-full relative flex items-center justify-center overflow-hidden">
+            <div className="absolute -right-6 top-1/2 -translate-y-1/2 z-50 pointer-events-none">
+              <DoveMascot isCheering={doveCheering} size="22vh" relative={true} />
+            </div>
+            <div className="absolute left-2 top-1/2 -translate-y-1/2 z-50">
+              <MuteButton />
+            </div>
+            <motion.div
+              key="auth-step"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, y: -50 }}
+              className="flex flex-col items-center justify-center h-full p-6 max-h-[80vh] m-auto gap-8 relative z-10"
+            >
+              <div className="bg-white/90 backdrop-blur-sm p-8 rounded-[2rem] shadow-xl border-4 border-white w-full max-w-[85%] text-center mt-4">
+              <h1 className="text-xl font-black text-blue-500 mb-6">Let's save your progress!</h1>
+              <p className="text-gray-600 mb-8 font-bold">Sign in to keep your stars and levels safe.</p>
+              <button
+                onClick={async () => {
+                  voiceCoach.playClick();
+                  try {
+                    await signInWithGoogle();
+                  } catch (e) {
+                    console.error(e);
+                  }
+                }}
+                className="flex items-center justify-center gap-3 bg-white border-4 border-blue-100 text-blue-600 text-xl font-black py-4 rounded-2xl shadow-[0_6px_0_rgb(219,234,254)] active:translate-y-1 active:shadow-none transition-all w-full"
+              >
+                <LogIn className="w-6 h-6" />
+                Sign in with Google
+              </button>
+              <button
+                onClick={() => {
+                  voiceCoach.playClick();
+                  setStep('name');
+                  setDoveMessage("Hi! What's your name?");
+                }}
+                className="mt-6 text-blue-400 font-bold hover:text-blue-600 transition-colors"
+              >
+                Continue without signing in
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
         {step === 'name' && (
-          <motion.div 
-            key="name-step"
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, y: -50 }}
-            className="flex flex-col items-center justify-center h-full p-6 max-h-[80vh] m-auto gap-8"
-          >
-            <DoveMascot isCheering={doveCheering} size="15vh" />
-            <div className="bg-white/90 backdrop-blur-sm p-8 rounded-[2rem] shadow-xl border-4 border-white w-full max-w-[85%] text-center mt-4">
+          <div className="h-full w-full relative flex items-center justify-center overflow-hidden">
+            <div className="absolute -right-6 top-1/2 -translate-y-1/2 z-50 pointer-events-none">
+              <DoveMascot isCheering={doveCheering} size="22vh" relative={true} />
+            </div>
+            <div className="absolute left-2 top-1/2 -translate-y-1/2 z-50">
+              <MuteButton />
+            </div>
+            <motion.div 
+              key="name-step"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, y: -50 }}
+              className="flex flex-col items-center justify-center h-full p-6 max-h-[80vh] m-auto gap-8 relative z-10"
+            >
+              <div className="bg-white/90 backdrop-blur-sm p-8 rounded-[2rem] shadow-xl border-4 border-white w-full max-w-[85%] text-center mt-4">
               <h1 className="text-xl font-black text-blue-500 mb-6">What's your name?</h1>
               <form onSubmit={(e) => {
                 voiceCoach.playClick();
@@ -273,18 +392,25 @@ export default function App() {
               </form>
             </div>
           </motion.div>
-        )}
+        </div>
+      )}
 
         {step === 'language' && (
-          <motion.div 
-            key="language-step"
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, y: -50 }}
-            className="flex flex-col items-center justify-center h-full p-6 overflow-y-auto max-h-[80vh] m-auto"
-          >
-            <DoveMascot isCheering={doveCheering} size="15vh" />
-            <div className="bg-white/90 backdrop-blur-sm p-8 rounded-[2rem] shadow-xl border-4 border-white w-full max-w-[85%] text-center mt-4">
+          <div className="h-full w-full relative flex items-center justify-center overflow-hidden">
+            <div className="absolute -right-6 top-1/2 -translate-y-1/2 z-50 pointer-events-none">
+              <DoveMascot isCheering={doveCheering} size="22vh" relative={true} />
+            </div>
+            <div className="absolute left-2 top-1/2 -translate-y-1/2 z-50">
+              <MuteButton />
+            </div>
+            <motion.div 
+              key="language-step"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, y: -50 }}
+              className="flex flex-col items-center justify-center h-full p-6 overflow-y-auto max-h-[80vh] m-auto relative z-10"
+            >
+              <div className="bg-white/90 backdrop-blur-sm p-8 rounded-[2rem] shadow-xl border-4 border-white w-full max-w-[85%] text-center mt-4">
               <h1 className="text-xl font-black text-blue-500 mb-6">What language do you speak?</h1>
               <div className="flex flex-col gap-4">
                 {LANGUAGES.map((lang) => (
@@ -302,7 +428,8 @@ export default function App() {
               </div>
             </div>
           </motion.div>
-        )}
+        </div>
+      )}
 
         {step === 'app' && (
           <motion.div 
@@ -314,6 +441,7 @@ export default function App() {
             {/* Top Header (10vh) */}
             <div className="h-[10vh] shrink-0 bg-white/80 backdrop-blur-md shadow-sm z-50 flex items-center justify-between px-4 relative">
               <div className="flex items-center gap-2">
+                <MuteButton />
                 <div className="w-[6vh] h-[6vh] min-w-[40px] min-h-[40px] bg-blue-100 rounded-full flex items-center justify-center text-xl font-bold text-blue-600 border-2 border-white shadow-sm">
                   {kidName.charAt(0).toUpperCase()}
                 </div>
