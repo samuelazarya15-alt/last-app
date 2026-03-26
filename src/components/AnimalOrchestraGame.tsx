@@ -72,6 +72,7 @@ export function AnimalOrchestraGame({ language, onBack, setDoveMessage, setDoveC
 
     if (mode === 'explore') {
       // Just play the sound and name
+      voiceCoach.playClick();
       const targetLang = language || 'english';
       const translation = animal.translations[targetLang as keyof typeof animal.translations];
       voiceCoach.playDualAudio(translation, targetLang, animal.audioUrl);
@@ -91,6 +92,7 @@ export function AnimalOrchestraGame({ language, onBack, setDoveMessage, setDoveC
       // Quiz mode
       if (animal.id === targetAnimal?.id) {
         // Correct
+        voiceCoach.playCorrect();
         setIsAnimating(true);
         setDoveCheering(true);
         setScore(s => s + 10);
@@ -114,6 +116,7 @@ export function AnimalOrchestraGame({ language, onBack, setDoveMessage, setDoveC
         }, 1500);
       } else {
         // Incorrect
+        voiceCoach.playIncorrect();
         voiceCoach.speak("Oops! Try again!", language || 'english');
         setDoveMessage("Oops! Try again!");
       }
@@ -128,6 +131,7 @@ export function AnimalOrchestraGame({ language, onBack, setDoveMessage, setDoveC
         <div className="flex gap-4">
           <button 
             onClick={() => {
+              voiceCoach.playClick();
               setScore(0);
               setLevel(1);
               setMode('explore');
@@ -140,7 +144,10 @@ export function AnimalOrchestraGame({ language, onBack, setDoveMessage, setDoveC
             Play Again
           </button>
           <button 
-            onClick={onBack}
+            onClick={() => {
+              voiceCoach.playClick();
+              onBack();
+            }}
             className="bg-gray-400 text-white px-8 py-4 rounded-2xl font-black text-sm shadow-[0_6px_0_rgb(107,114,128)] active:translate-y-1 active:shadow-none"
           >
             Back to Games

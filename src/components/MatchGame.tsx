@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import wordsData from '../data/words.json';
 import { GameTimer } from './GameTimer';
 import { logGameSession } from '../lib/progress';
+import { voiceCoach } from '../lib/VoiceCoach';
 
 interface MatchGameProps {
   language: string | null;
@@ -66,6 +67,7 @@ export function MatchGame({ language, onBack, setDoveMessage, setDoveCheering }:
       const englishWord = words.find(w => w.english === selectedEnglish);
       if (englishWord && englishWord.tigrinya === selectedTigrinya) {
         // Match found
+        voiceCoach.playCorrect();
         const newMatchedPairs = [...matchedPairs, englishWord.id];
         setMatchedPairs(newMatchedPairs);
         setDoveCheering(true);
@@ -87,6 +89,7 @@ export function MatchGame({ language, onBack, setDoveMessage, setDoveCheering }:
         }, 1000);
       } else {
         // No match
+        voiceCoach.playIncorrect();
         setDoveMessage("Oops, those don't match. Try again!");
         setTimeout(() => {
           setSelectedEnglish(null);
@@ -102,7 +105,10 @@ export function MatchGame({ language, onBack, setDoveMessage, setDoveCheering }:
     <div className="w-full h-full p-6 pb-32 flex flex-col items-center justify-start bg-purple-50 relative overflow-hidden">
       <div className="w-full flex justify-between items-center z-10 mb-4 mt-2">
         <button 
-          onClick={onBack}
+          onClick={() => {
+            voiceCoach.playClick();
+            onBack();
+          }}
           className="bg-white text-purple-500 font-black px-6 py-3 rounded-full shadow-[0_4px_0_rgb(216,180,254)] active:translate-y-1 active:shadow-none z-10 text-sm"
         >
           ← Back
@@ -135,7 +141,12 @@ export function MatchGame({ language, onBack, setDoveMessage, setDoveCheering }:
                 key={`eng-${word.id}`}
                 whileHover={!isMatched ? { scale: 1.02 } : {}}
                 whileTap={!isMatched ? { scale: 0.98 } : {}}
-                onClick={() => !isMatched && !isGameOver && setSelectedEnglish(word.english)}
+                onClick={() => {
+                  if (!isMatched && !isGameOver) {
+                    voiceCoach.playClick();
+                    setSelectedEnglish(word.english);
+                  }
+                }}
                 disabled={isMatched || isGameOver}
                 className={`p-6 rounded-2xl font-black text-base border-4 transition-all ${
                   isMatched 
@@ -164,7 +175,12 @@ export function MatchGame({ language, onBack, setDoveMessage, setDoveCheering }:
                 key={`tig-${word.id}`}
                 whileHover={!isMatched ? { scale: 1.02 } : {}}
                 whileTap={!isMatched ? { scale: 0.98 } : {}}
-                onClick={() => !isMatched && !isGameOver && setSelectedTigrinya(word.tigrinya)}
+                onClick={() => {
+                  if (!isMatched && !isGameOver) {
+                    voiceCoach.playClick();
+                    setSelectedTigrinya(word.tigrinya);
+                  }
+                }}
                 disabled={isMatched || isGameOver}
                 className={`p-6 rounded-2xl font-black text-base border-4 transition-all ${
                   isMatched 

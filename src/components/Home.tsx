@@ -49,6 +49,7 @@ export function Home({ setCurrentTab, setCurrentWorld }: HomeProps) {
             whileHover={{ scale: 1.05, y: -5 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => {
+              voiceCoach.playClick();
               setCurrentWorld(world.id);
               setCurrentTab('games');
               voiceCoach.speak(`Welcome to ${world.name}!`, "english");

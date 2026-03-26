@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Trophy as TrophyIcon, Flame, Coins, BookOpen, Star, Target, Plus, History } from 'lucide-react';
 import { getUserStats, getGameHistory, getUserGoals, setGoal, UserStats, GameSession, Goal as UserGoal } from '../lib/progress';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { voiceCoach } from '../lib/VoiceCoach';
 
 export function Trophy() {
   const [stats, setStats] = useState<UserStats | null>(null);
@@ -177,7 +178,10 @@ export function Trophy() {
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            onClick={() => setShowGoalModal(true)}
+            onClick={() => {
+              voiceCoach.playClick();
+              setShowGoalModal(true);
+            }}
             className="p-3 bg-red-50 text-red-500 rounded-2xl hover:bg-red-100 transition-all min-w-[50px] min-h-[50px] flex items-center justify-center"
           >
             <Plus size={24} strokeWidth={3} />
@@ -238,7 +242,10 @@ export function Trophy() {
                 <motion.button 
                   whileHover={{ scale: 1.02, x: 5 }}
                   whileTap={{ scale: 0.98 }}
-                  onClick={() => handleAddGoal('daily_xp', 500)}
+                  onClick={() => {
+                    voiceCoach.playClick();
+                    handleAddGoal('daily_xp', 500);
+                  }}
                   className="p-6 bg-orange-50 border-4 border-orange-100 rounded-[2rem] text-left hover:border-orange-400 transition-all group"
                 >
                   <div className="font-black text-orange-600 text-base mb-1 group-hover:text-orange-700">Daily XP Master</div>
@@ -248,7 +255,10 @@ export function Trophy() {
                 <motion.button 
                   whileHover={{ scale: 1.02, x: 5 }}
                   whileTap={{ scale: 0.98 }}
-                  onClick={() => handleAddGoal('games_played', 5)}
+                  onClick={() => {
+                    voiceCoach.playClick();
+                    handleAddGoal('games_played', 5);
+                  }}
                   className="p-6 bg-blue-50 border-4 border-blue-100 rounded-[2rem] text-left hover:border-blue-400 transition-all group"
                 >
                   <div className="font-black text-blue-600 text-base mb-1 group-hover:text-blue-700">Game Enthusiast</div>
@@ -258,7 +268,10 @@ export function Trophy() {
                 <motion.button 
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
-                  onClick={() => setShowGoalModal(false)}
+                  onClick={() => {
+                    voiceCoach.playClick();
+                    setShowGoalModal(false);
+                  }}
                   className="mt-4 w-full py-4 bg-gray-100 text-gray-500 font-black rounded-[1.5rem] hover:bg-gray-200 transition-colors text-base"
                 >
                   CANCEL

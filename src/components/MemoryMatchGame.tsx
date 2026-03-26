@@ -143,7 +143,10 @@ export function MemoryMatchGame({ language, onBack, setDoveMessage, setDoveCheer
     <div className="flex flex-col items-center justify-start w-full h-full p-4 pb-32 relative overflow-hidden bg-purple-100">
       <div className="w-full flex justify-between items-center z-10 mb-2 mt-2">
         <button 
-          onClick={onBack}
+          onClick={() => {
+            voiceCoach.playClick();
+            onBack();
+          }}
           className="bg-white/90 px-4 py-2 rounded-full font-black text-purple-600 shadow-[0_4px_0_rgb(147,51,234)] active:translate-y-1 active:shadow-[0_0px_0_rgb(147,51,234)] transition-all text-base border-2 border-purple-200"
         >
           ← Back

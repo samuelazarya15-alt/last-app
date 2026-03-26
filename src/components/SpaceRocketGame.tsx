@@ -63,6 +63,7 @@ export function SpaceRocketGame({ language, onBack, setDoveMessage, setDoveCheer
 
     if (word.category === targetCategory) {
       // Correct
+      voiceCoach.playCorrect();
       setIsAnimating(true);
       setDoveCheering(true);
       setScore(s => s + 10);
@@ -105,6 +106,7 @@ export function SpaceRocketGame({ language, onBack, setDoveMessage, setDoveCheer
 
     } else {
       // Incorrect
+      voiceCoach.playIncorrect();
       voiceCoach.speak("Oops! Wrong category!", language || 'english');
       setDoveMessage("Oops! Wrong category!");
     }
@@ -118,6 +120,7 @@ export function SpaceRocketGame({ language, onBack, setDoveMessage, setDoveCheer
         <div className="flex gap-4">
           <button 
             onClick={() => {
+              voiceCoach.playClick();
               setScore(0);
               setLevel(1);
               setGameOver(false);
@@ -129,7 +132,10 @@ export function SpaceRocketGame({ language, onBack, setDoveMessage, setDoveCheer
             Play Again
           </button>
           <button 
-            onClick={onBack}
+            onClick={() => {
+              voiceCoach.playClick();
+              onBack();
+            }}
             className="bg-gray-400 text-white px-8 py-4 rounded-2xl font-black text-sm shadow-[0_6px_0_rgb(107,114,128)] active:translate-y-1 active:shadow-none"
           >
             Back to Games
@@ -161,7 +167,10 @@ export function SpaceRocketGame({ language, onBack, setDoveMessage, setDoveCheer
 
       <div className="w-full flex justify-between items-center z-10 mb-4">
         <button 
-          onClick={onBack}
+          onClick={() => {
+            voiceCoach.playClick();
+            onBack();
+          }}
           className="w-12 h-12 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center shadow-md text-sm border border-white/30"
         >
           🏠
@@ -201,7 +210,10 @@ export function SpaceRocketGame({ language, onBack, setDoveMessage, setDoveCheer
                 exit={{ opacity: 0, scale: 0 }}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                onClick={() => handleSelect(opt)}
+                onClick={() => {
+                  voiceCoach.playClick();
+                  handleSelect(opt);
+                }}
                 className="bg-indigo-800/80 backdrop-blur-sm p-4 rounded-2xl shadow-md border-2 border-indigo-400 flex items-center justify-center gap-4 hover:bg-indigo-700 transition-colors"
               >
                 <span className="text-2xl">{opt.emoji}</span>

@@ -71,6 +71,7 @@ export function ColorSplashGame({ language, onBack, setDoveMessage, setDoveCheer
 
     if (color.id === targetColor?.id) {
       // Correct
+      voiceCoach.playCorrect();
       setIsAnimating(true);
       setDoveCheering(true);
       setScore(s => s + 10);
@@ -97,6 +98,7 @@ export function ColorSplashGame({ language, onBack, setDoveMessage, setDoveCheer
       }, 1500);
     } else {
       // Incorrect
+      voiceCoach.playIncorrect();
       voiceCoach.speak("Oops! Wrong color!", language || 'english');
       setDoveMessage("Oops! Wrong color!");
     }
@@ -128,6 +130,7 @@ export function ColorSplashGame({ language, onBack, setDoveMessage, setDoveCheer
         <div className="flex gap-4">
           <button 
             onClick={() => {
+              voiceCoach.playClick();
               setScore(0);
               setLevel(1);
               setGameOver(false);
@@ -139,7 +142,10 @@ export function ColorSplashGame({ language, onBack, setDoveMessage, setDoveCheer
             Play Again
           </button>
           <button 
-            onClick={onBack}
+            onClick={() => {
+              voiceCoach.playClick();
+              onBack();
+            }}
             className="bg-gray-400 text-white px-8 py-4 rounded-2xl font-black text-sm shadow-[0_6px_0_rgb(107,114,128)] active:translate-y-1 active:shadow-none"
           >
             Back to Games

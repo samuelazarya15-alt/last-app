@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import wordsData from '../data/words.json';
 import { GameTimer } from './GameTimer';
 import { logGameSession } from '../lib/progress';
+import { voiceCoach } from '../lib/VoiceCoach';
 
 interface TraceWordGameProps {
   language: string | null;
@@ -38,6 +39,7 @@ export function TraceWordGame({ language, onBack, setDoveMessage, setDoveCheerin
 
   const handleTimeUp = React.useCallback(() => {
     if (isAnimating) return;
+    voiceCoach.playIncorrect();
     setDoveMessage("Time's up! Let's try the next word.");
     setIsAnimating(true);
     setTimeout(() => {
@@ -58,9 +60,11 @@ export function TraceWordGame({ language, onBack, setDoveMessage, setDoveCheerin
       newTraced[index] = true;
       setTracedLetters(newTraced);
       setScore(prev => prev + 2);
+      voiceCoach.playClick();
 
       // Check if word is fully traced
       if (newTraced.every(Boolean)) {
+        voiceCoach.playCorrect();
         setIsAnimating(true);
         setDoveCheering(true);
         setDoveMessage("Great job! You traced the word!");
@@ -90,7 +94,10 @@ export function TraceWordGame({ language, onBack, setDoveMessage, setDoveCheerin
     <div className="w-full h-full p-6 pb-32 flex flex-col items-center justify-start bg-sky-50 relative overflow-hidden">
       <div className="w-full flex justify-between items-center z-10 mb-4 mt-2">
         <button 
-          onClick={onBack}
+          onClick={() => {
+            voiceCoach.playClick();
+            onBack();
+          }}
           className="bg-white text-blue-500 font-black px-6 py-3 rounded-full shadow-[0_4px_0_rgb(203,213,225)] active:translate-y-1 active:shadow-none z-10 text-sm"
         >
           ← Back

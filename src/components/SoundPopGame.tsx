@@ -132,6 +132,7 @@ export function SoundPopGame({ language, onBack, setDoveMessage, setDoveCheering
         <div className="flex gap-4">
           <button 
             onClick={() => {
+              voiceCoach.playClick();
               setScore(0);
               setLevel(1);
               setGameOver(false);
@@ -142,7 +143,10 @@ export function SoundPopGame({ language, onBack, setDoveMessage, setDoveCheering
             Play Again
           </button>
           <button 
-            onClick={onBack}
+            onClick={() => {
+              voiceCoach.playClick();
+              onBack();
+            }}
             className="bg-gray-400 text-white px-8 py-4 rounded-2xl font-black text-base shadow-[0_6px_0_rgb(107,114,128)] active:translate-y-1 active:shadow-none"
           >
             Back to Games
@@ -156,7 +160,10 @@ export function SoundPopGame({ language, onBack, setDoveMessage, setDoveCheering
     <div className="w-full h-full flex flex-col items-center justify-start bg-sky-50 p-4 relative overflow-hidden">
       <div className="w-full flex justify-between items-center z-10 mb-4">
         <button 
-          onClick={onBack}
+          onClick={() => {
+            voiceCoach.playClick();
+            onBack();
+          }}
           className="w-14 h-14 bg-white rounded-full flex items-center justify-center shadow-md text-xl"
         >
           🏠
@@ -205,7 +212,10 @@ export function SoundPopGame({ language, onBack, setDoveMessage, setDoveCheering
               onAnimationComplete={() => handleEscaped(word)}
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 1.2 }}
-              onClick={() => handlePop(word)}
+              onClick={() => {
+                voiceCoach.playClick();
+                handlePop(word);
+              }}
               className="absolute w-24 h-24 bg-cyan-300/40 backdrop-blur-sm rounded-full shadow-[inset_0_-10px_20px_rgba(255,255,255,0.5),0_4px_10px_rgba(0,0,0,0.1)] border border-white/50 flex flex-col items-center justify-center z-20"
               style={{ transform: 'translateX(-50%)' }}
             >

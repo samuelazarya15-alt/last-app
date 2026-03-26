@@ -1,5 +1,6 @@
 import React from 'react';
 import { motion } from 'motion/react';
+import { voiceCoach } from '../lib/VoiceCoach';
 
 interface IntroProps {
   onStart: () => void;
@@ -101,7 +102,10 @@ export const Intro: React.FC<IntroProps> = ({ onStart }) => {
           transition={{ delay: 1, type: "spring" }}
           whileHover={{ scale: 1.1, rotate: -2 }}
           whileTap={{ scale: 0.9 }}
-          onClick={onStart}
+          onClick={() => {
+            voiceCoach.playClick();
+            onStart();
+          }}
           className="group relative bg-white py-6 px-20 rounded-[2.5rem] border-4 border-yellow-400 shadow-[0_15px_30px_rgba(202,138,4,0.3)] transition-all hover:shadow-[0_20px_40px_rgba(202,138,4,0.4)] overflow-hidden"
         >
           <div className="absolute top-0 left-0 w-full h-2 bg-yellow-400" />

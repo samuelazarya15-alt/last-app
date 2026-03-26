@@ -51,14 +51,15 @@ export function GeezGravityGame({ language, onBack, setDoveMessage, setDoveCheer
   const lastTimeRef = useRef<number>();
 
   const playSound = (type: 'match' | 'fail' | 'gameover') => {
-    const sounds = {
-      match: 'https://raw.githubusercontent.com/photonstorm/phaser3-examples/master/public/assets/audio/SoundEffects/ping.mp3',
-      fail: 'https://raw.githubusercontent.com/photonstorm/phaser3-examples/master/public/assets/audio/SoundEffects/alien_death.wav',
-      gameover: 'https://raw.githubusercontent.com/photonstorm/phaser3-examples/master/public/assets/audio/SoundEffects/key.wav'
-    };
-    const audio = new Audio(sounds[type]);
-    audio.volume = 0.5;
-    audio.play().catch(e => {}); // Silently fail to avoid console noise
+    if (type === 'match') {
+      voiceCoach.playCorrect();
+    } else if (type === 'fail') {
+      voiceCoach.playIncorrect();
+    } else if (type === 'gameover') {
+      // You can add a specific game over sound to VoiceCoach if needed, 
+      // or just use playIncorrect for now.
+      voiceCoach.playIncorrect();
+    }
   };
 
   const spawnWord = useCallback(() => {
@@ -152,18 +153,27 @@ export function GeezGravityGame({ language, onBack, setDoveMessage, setDoveCheer
   }, [fallingWords, targetWord, updateOptions]);
 
   useEffect(() => {
-    const timer = setInterval(() => {
-      if (!isPaused && !gameOver && gameTime > 0) {
-        setGameTime(prev => prev - 1);
-      } else if (gameTime === 0) {
+    if (isPaused || gameOver || gameTime <= 0) {
+      if (gameTime === 0 && !gameOver) {
         playSound('gameover');
         setGameOver(true);
         setDoveMessage("Time's up! Great job!");
         logGameSession('geezgravity', score, 60);
       }
+      return;
+    }
+
+    const timer = setInterval(() => {
+      setGameTime(prev => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          return 0;
+        }
+        return prev - 1;
+      });
     }, 1000);
     return () => clearInterval(timer);
-  }, [isPaused, gameOver, gameTime, setDoveMessage]);
+  }, [isPaused, gameOver, gameTime <= 0, setDoveMessage, score]);
 
   const handleOptionClick = (wordId: string) => {
     if (!targetWord || gameOver) return;
@@ -228,7 +238,10 @@ export function GeezGravityGame({ language, onBack, setDoveMessage, setDoveCheer
       <div className="absolute top-0 left-0 w-full p-4 flex justify-between items-center z-50 bg-indigo-950/80 backdrop-blur-md border-b border-white/10">
         <motion.button 
           whileTap={{ scale: 0.9 }}
-          onClick={onBack}
+          onClick={() => {
+            voiceCoach.playClick();
+            onBack();
+          }}
           className="p-2 bg-white/10 rounded-full text-white hover:bg-white/20 transition-colors"
         >
           <ArrowLeft size={24} />
@@ -346,7 +359,10 @@ export function GeezGravityGame({ language, onBack, setDoveMessage, setDoveCheer
               key={option.id}
               whileHover={{ scale: 1.02, backgroundColor: 'rgba(79, 70, 229, 0.2)' }}
               whileTap={{ scale: 0.95 }}
-              onClick={() => handleOptionClick(option.id)}
+              onClick={() => {
+                voiceCoach.playClick();
+                handleOptionClick(option.id);
+              }}
               className="bg-white/5 border-2 border-white/5 rounded-2xl p-4 flex flex-col items-center justify-center transition-all group"
             >
               <span className="text-xl font-black text-white tracking-tight group-hover:text-indigo-300 transition-colors">
@@ -406,7 +422,10 @@ export function GeezGravityGame({ language, onBack, setDoveMessage, setDoveCheer
                     <motion.button
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.95 }}
-                      onClick={restartGame}
+                      onClick={() => {
+                        voiceCoach.playClick();
+                        restartGame();
+                      }}
                       className="w-full py-5 bg-white text-indigo-900 rounded-2xl font-black text-xl shadow-[0_8px_0_rgb(226,232,240)] active:shadow-none active:translate-y-1 flex items-center justify-center gap-3 transition-all"
                     >
                       <RefreshCw size={24} />
@@ -416,7 +435,10 @@ export function GeezGravityGame({ language, onBack, setDoveMessage, setDoveCheer
                     <motion.button
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.95 }}
-                      onClick={fetchHighScores}
+                      onClick={() => {
+                        voiceCoach.playClick();
+                        fetchHighScores();
+                      }}
                       className="w-full py-5 bg-indigo-500 text-white rounded-2xl font-black text-xl shadow-[0_8px_0_rgb(67,56,202)] active:shadow-none active:translate-y-1 flex items-center justify-center gap-3 transition-all"
                     >
                       <BarChart2 size={24} />
@@ -426,7 +448,10 @@ export function GeezGravityGame({ language, onBack, setDoveMessage, setDoveCheer
                     <motion.button
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.95 }}
-                      onClick={onBack}
+                      onClick={() => {
+                        voiceCoach.playClick();
+                        onBack();
+                      }}
                       className="w-full py-5 bg-white/5 text-white/60 rounded-2xl font-black text-xl hover:bg-white/10 transition-all"
                     >
                       EXIT GAME
@@ -453,7 +478,10 @@ export function GeezGravityGame({ language, onBack, setDoveMessage, setDoveCheer
                     <motion.button
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.95 }}
-                      onClick={() => setShowHighScores(false)}
+                      onClick={() => {
+                        voiceCoach.playClick();
+                        setShowHighScores(false);
+                      }}
                       className="w-full py-4 bg-white/10 text-white rounded-2xl font-black text-lg hover:bg-white/20 transition-all"
                     >
                       BACK

@@ -71,7 +71,7 @@ export function StadiumGame({ language, onBack, setDoveMessage, setDoveCheering 
 
   const handleTimeUp = React.useCallback(() => {
     if (isAnimating || isTimeFrozen) return;
-    voiceCoach.playSfx('wrong');
+    voiceCoach.playIncorrect();
     setDoveMessage("Time's up! Let's try the next one.");
     setIsAnimating(true);
     setTimeout(() => {
@@ -94,7 +94,7 @@ export function StadiumGame({ language, onBack, setDoveMessage, setDoveCheering 
     setTimeout(() => {
       if (guess === currentWord[language as keyof typeof currentWord]) {
         // Correct
-        voiceCoach.playSfx('score');
+        voiceCoach.playCorrect();
         setDoveCheering(true);
         
         let points = 10;
@@ -117,7 +117,6 @@ export function StadiumGame({ language, onBack, setDoveMessage, setDoveCheering 
 
         setDoveMessage(message);
         setScore(s => s + points);
-        voiceCoach.playSfx('score');
         
         if ((currentWordIndex + 1) % 3 === 0) {
           setLevel(l => l + 1);
@@ -144,7 +143,7 @@ export function StadiumGame({ language, onBack, setDoveMessage, setDoveCheering 
         }, 2000);
       } else {
         // Wrong
-        voiceCoach.playSfx('wrong');
+        voiceCoach.playIncorrect();
         setDoveMessage("Oops! Try again!");
         setTimeout(() => {
           setIsAnimating(false);
@@ -214,7 +213,10 @@ export function StadiumGame({ language, onBack, setDoveMessage, setDoveCheering 
 
       <div className="w-full flex justify-between items-center z-10 mb-2 mt-2">
         <button 
-          onClick={onBack}
+          onClick={() => {
+            voiceCoach.playClick();
+            onBack();
+          }}
           className="bg-white/90 px-4 py-2 rounded-full font-black text-blue-600 shadow-[0_4px_0_rgb(37,99,235)] active:translate-y-1 active:shadow-[0_0px_0_rgb(37,99,235)] transition-all text-base border-2 border-blue-200"
         >
           ← Back
@@ -302,7 +304,10 @@ export function StadiumGame({ language, onBack, setDoveMessage, setDoveCheering 
               transition={{ duration: 0.5, type: "spring" }}
               whileHover={!isAnimating ? { scale: 1.05, rotate: Math.random() * 10 - 5 } : {}}
               whileTap={!isAnimating ? { scale: 0.95 } : {}}
-              onClick={() => handleGuess(option)}
+              onClick={() => {
+                voiceCoach.playClick();
+                handleGuess(option);
+              }}
               disabled={isAnimating}
               className={`rounded-full w-[64px] h-[64px] flex items-center justify-center text-base font-black border-2 active:translate-y-1 active:shadow-none transition-all relative overflow-hidden group shadow-md ${getBallStyles()} ${isKicked ? 'z-50' : 'z-10'}`}
             >

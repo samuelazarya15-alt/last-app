@@ -68,6 +68,7 @@ export function WordBridgeGame({ language, onBack, setDoveMessage, setDoveCheeri
 
     if (word.id === targetWord?.id) {
       // Correct
+      voiceCoach.playCorrect();
       setIsAnimating(true);
       setDoveCheering(true);
       setScore(s => s + 10);
@@ -105,6 +106,7 @@ export function WordBridgeGame({ language, onBack, setDoveMessage, setDoveCheeri
 
     } else {
       // Incorrect
+      voiceCoach.playIncorrect();
       voiceCoach.speak("Oops! That's not it!", language || 'english');
       setDoveMessage("Oops! That's not it!");
     }
@@ -118,6 +120,7 @@ export function WordBridgeGame({ language, onBack, setDoveMessage, setDoveCheeri
         <div className="flex gap-4">
           <button 
             onClick={() => {
+              voiceCoach.playClick();
               setScore(0);
               setLevel(1);
               setGameOver(false);
@@ -129,7 +132,10 @@ export function WordBridgeGame({ language, onBack, setDoveMessage, setDoveCheeri
             Play Again
           </button>
           <button 
-            onClick={onBack}
+            onClick={() => {
+              voiceCoach.playClick();
+              onBack();
+            }}
             className="bg-gray-400 text-white px-8 py-4 rounded-2xl font-black text-xl shadow-[0_6px_0_rgb(107,114,128)] active:translate-y-1 active:shadow-none"
           >
             Back to Games
@@ -143,7 +149,10 @@ export function WordBridgeGame({ language, onBack, setDoveMessage, setDoveCheeri
     <div className="w-full h-full flex flex-col items-center justify-start bg-cyan-50 p-4 relative overflow-hidden">
       <div className="w-full flex justify-between items-center z-10 mb-4">
         <button 
-          onClick={onBack}
+          onClick={() => {
+            voiceCoach.playClick();
+            onBack();
+          }}
           className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-md text-2xl"
         >
           🏠
@@ -229,7 +238,10 @@ export function WordBridgeGame({ language, onBack, setDoveMessage, setDoveCheeri
                 exit={{ opacity: 0, scale: 0 }}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                onClick={() => handleSelect(opt)}
+                onClick={() => {
+                  voiceCoach.playClick();
+                  handleSelect(opt);
+                }}
                 className="bg-white p-4 rounded-2xl shadow-md border-4 border-cyan-100 flex items-center justify-center gap-4 hover:border-cyan-300 transition-colors"
               >
                 <span className="text-4xl">{opt.emoji}</span>

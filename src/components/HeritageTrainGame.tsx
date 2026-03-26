@@ -64,6 +64,7 @@ export function HeritageTrainGame({ language, onBack, setDoveMessage, setDoveChe
 
     if (word.english.charAt(0).toUpperCase() === targetLetter) {
       // Correct
+      voiceCoach.playCorrect();
       setIsAnimating(true);
       setDoveCheering(true);
       setScore(s => s + 10);
@@ -103,6 +104,7 @@ export function HeritageTrainGame({ language, onBack, setDoveMessage, setDoveChe
       }, 1000);
     } else {
       // Incorrect
+      voiceCoach.playIncorrect();
       voiceCoach.speak("Oops! Wrong letter!", language || 'english');
       setDoveMessage("Oops! Wrong letter!");
     }
@@ -117,6 +119,7 @@ export function HeritageTrainGame({ language, onBack, setDoveMessage, setDoveChe
         <div className="flex gap-4">
           <button 
             onClick={() => {
+              voiceCoach.playClick();
               setScore(0);
               setLevel(1);
               setGameOver(false);
@@ -128,7 +131,10 @@ export function HeritageTrainGame({ language, onBack, setDoveMessage, setDoveChe
             Play Again
           </button>
           <button 
-            onClick={onBack}
+            onClick={() => {
+              voiceCoach.playClick();
+              onBack();
+            }}
             className="bg-gray-400 text-white px-8 py-4 rounded-2xl font-black text-sm shadow-[0_6px_0_rgb(107,114,128)] active:translate-y-1 active:shadow-none"
           >
             Back to Games
@@ -142,7 +148,10 @@ export function HeritageTrainGame({ language, onBack, setDoveMessage, setDoveChe
     <div className="w-full h-full flex flex-col items-center justify-start bg-sky-50 p-4 relative overflow-hidden">
       <div className="w-full flex justify-between items-center z-10 mb-4">
         <button 
-          onClick={onBack}
+          onClick={() => {
+            voiceCoach.playClick();
+            onBack();
+          }}
           className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-md text-sm"
         >
           🏠
@@ -182,7 +191,10 @@ export function HeritageTrainGame({ language, onBack, setDoveMessage, setDoveChe
                 exit={{ opacity: 0, scale: 0 }}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                onClick={() => handleLoadCar(opt)}
+                onClick={() => {
+                  voiceCoach.playClick();
+                  handleLoadCar(opt);
+                }}
                 className="bg-white p-4 rounded-2xl shadow-md border-4 border-stone-100 flex items-center justify-center gap-4"
               >
                 <span className="text-2xl">{opt.emoji}</span>

@@ -75,6 +75,7 @@ export function HungryDoveGame({ language, onBack, setDoveMessage, setDoveCheeri
 
     if (word.english === targetWord?.english) {
       // Correct
+      voiceCoach.playCorrect();
       setIsAnimating(true);
       setDoveCheering(true);
       setScore(s => s + 10);
@@ -98,6 +99,7 @@ export function HungryDoveGame({ language, onBack, setDoveMessage, setDoveCheeri
       }, 1000);
     } else {
       // Incorrect
+      voiceCoach.playIncorrect();
       voiceCoach.speak("Yuck! Not that one!", language || 'english');
       setDoveMessage("Yuck! Not that one!");
       setFallingWords(prev => prev.filter(w => w.uniqueId !== word.uniqueId)); // Remove the wrong one
@@ -127,6 +129,7 @@ export function HungryDoveGame({ language, onBack, setDoveMessage, setDoveCheeri
         <div className="flex gap-4">
           <button 
             onClick={() => {
+              voiceCoach.playClick();
               setScore(0);
               setLevel(1);
               setGameOver(false);
@@ -137,7 +140,10 @@ export function HungryDoveGame({ language, onBack, setDoveMessage, setDoveCheeri
             Play Again
           </button>
           <button 
-            onClick={onBack}
+            onClick={() => {
+              voiceCoach.playClick();
+              onBack();
+            }}
             className="bg-gray-400 text-white px-8 py-4 rounded-2xl font-black text-xl shadow-[0_6px_0_rgb(107,114,128)] active:translate-y-1 active:shadow-none"
           >
             Back to Games
@@ -151,7 +157,10 @@ export function HungryDoveGame({ language, onBack, setDoveMessage, setDoveCheeri
     <div className="w-full h-full flex flex-col items-center justify-start bg-sky-50 p-4 relative overflow-hidden">
       <div className="w-full flex justify-between items-center z-10 mb-4">
         <button 
-          onClick={onBack}
+          onClick={() => {
+            voiceCoach.playClick();
+            onBack();
+          }}
           className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-md text-2xl"
         >
           🏠
@@ -194,7 +203,10 @@ export function HungryDoveGame({ language, onBack, setDoveMessage, setDoveCheeri
               onAnimationComplete={() => handleMissed(word)}
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
-              onClick={() => handleCatch(word)}
+              onClick={() => {
+                voiceCoach.playClick();
+                handleCatch(word);
+              }}
               className="absolute w-20 h-20 bg-white rounded-full shadow-lg border-4 border-amber-100 flex items-center justify-center text-4xl z-20"
               style={{ left: `${word.x}%`, transform: 'translateX(-50%)' }}
             >

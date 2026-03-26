@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import wordsData from '../data/words.json';
 import { GameTimer } from './GameTimer';
 import { logGameSession } from '../lib/progress';
+import { voiceCoach } from '../lib/VoiceCoach';
 
 interface FeedLionGameProps {
   language: string | null;
@@ -64,6 +65,7 @@ export function FeedLionGame({ language, onBack, setDoveMessage, setDoveCheering
     if (isEating) return;
     const currentWord = words[currentWordIndex];
     if (selectedWord === currentWord.tigrinya) {
+      voiceCoach.playCorrect();
       setIsEating(true);
       setDoveCheering(true);
       setDoveMessage("Yum! The lion loved it!");
@@ -81,6 +83,7 @@ export function FeedLionGame({ language, onBack, setDoveMessage, setDoveCheering
         }
       }, 2000);
     } else {
+      voiceCoach.playIncorrect();
       setDoveMessage("Oops! The lion didn't want that word. Try again!");
     }
   };
@@ -94,7 +97,10 @@ export function FeedLionGame({ language, onBack, setDoveMessage, setDoveCheering
     <div className="w-full h-full p-6 pb-32 flex flex-col items-center justify-start bg-orange-50 relative overflow-hidden">
       <div className="w-full flex justify-between items-center z-10 mb-4 mt-2">
         <button 
-          onClick={onBack}
+          onClick={() => {
+            voiceCoach.playClick();
+            onBack();
+          }}
           className="bg-white text-orange-500 font-black px-6 py-3 rounded-full shadow-[0_4px_0_rgb(253,186,116)] active:translate-y-1 active:shadow-none z-10 text-sm"
         >
           ← Back
@@ -139,7 +145,10 @@ export function FeedLionGame({ language, onBack, setDoveMessage, setDoveCheering
               key={index}
               whileHover={{ scale: 1.05, x: -5 }}
               whileTap={{ scale: 0.95 }}
-              onClick={() => handleFeed(option)}
+              onClick={() => {
+                voiceCoach.playClick();
+                handleFeed(option);
+              }}
               disabled={isEating}
               className={`bg-yellow-400 text-yellow-900 text-sm font-black w-[56px] h-[56px] rounded-full border-2 border-white shadow-md active:translate-y-1 active:shadow-none transition-all flex items-center justify-center ${isEating ? 'opacity-50 cursor-not-allowed' : ''}`}
             >

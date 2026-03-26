@@ -46,7 +46,7 @@ export function GameTimer({ duration, onTimeUp, resetKey, isPaused = false }: Ga
     }, 1000);
 
     return () => clearInterval(timerId);
-  }, [isPaused, timeLeft]);
+  }, [isPaused, timeLeft <= 0]);
 
   // Calculate percentage for the progress bar
   const percentage = Math.max(0, (timeLeft / duration) * 100);

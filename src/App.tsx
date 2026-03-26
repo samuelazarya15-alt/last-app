@@ -122,6 +122,7 @@ export default function App() {
   };
 
   const handleLanguageSelect = (langCode: string) => {
+    voiceCoach.playClick();
     setLanguage(langCode);
     setStep('app');
     setDoveMessage(`Great choice, ${kidName.trim()}! Let's start learning. Check out your progress or play a game!`);
@@ -205,7 +206,10 @@ export default function App() {
                   key={game.id}
                   whileHover={{ scale: 1.05, y: -5 }}
                   whileTap={{ scale: 0.95 }}
-                  onClick={() => setCurrentGame(game.id)}
+                  onClick={() => {
+                    voiceCoach.playClick();
+                    setCurrentGame(game.id);
+                  }}
                   className={`group relative bg-white p-4 rounded-[2rem] shadow-lg border-4 border-${game.color}-50 flex flex-col items-center justify-center gap-4 transition-all hover:border-${game.color}-400 hover:shadow-2xl w-full aspect-square`}
                 >
                   <div className={`bg-${game.color}-400 w-[72px] h-[72px] rounded-2xl shadow-sm group-hover:scale-110 group-hover:rotate-3 transition-transform flex items-center justify-center`}>
@@ -247,7 +251,10 @@ export default function App() {
             <DoveMascot isCheering={doveCheering} size="15vh" />
             <div className="bg-white/90 backdrop-blur-sm p-8 rounded-[2rem] shadow-xl border-4 border-white w-full max-w-[85%] text-center mt-4">
               <h1 className="text-xl font-black text-blue-500 mb-6">What's your name?</h1>
-              <form onSubmit={handleNameSubmit} className="flex flex-col gap-8">
+              <form onSubmit={(e) => {
+                voiceCoach.playClick();
+                handleNameSubmit(e);
+              }} className="flex flex-col gap-8">
                 <input 
                   type="text" 
                   value={kidName}
@@ -326,7 +333,10 @@ export default function App() {
                   <span className="font-black text-yellow-600 text-sm">{stars}</span>
                 </div>
                 <button 
-                  onClick={() => setIsSettingsOpen(true)}
+                  onClick={() => {
+                    voiceCoach.playClick();
+                    setIsSettingsOpen(true);
+                  }}
                   className="w-10 h-10 bg-gray-100 text-gray-600 rounded-full flex items-center justify-center shadow-sm hover:scale-105 transition-transform border-2 border-white"
                 >
                   <Settings size={20} />
@@ -350,6 +360,7 @@ export default function App() {
             <div className="h-[12vh] shrink-0 w-full bg-white/90 backdrop-blur-md border-t-4 border-gray-100 flex items-center justify-center gap-3 px-4 z-50">
               <button 
                 onClick={() => {
+                  voiceCoach.playClick();
                   if (currentGame) {
                     setCurrentGame(null);
                   } else {
@@ -364,6 +375,7 @@ export default function App() {
 
               <button 
                 onClick={() => {
+                  voiceCoach.playClick();
                   setCurrentGame(null);
                   setCurrentWorld(null);
                   setCurrentTab('games');
@@ -380,6 +392,7 @@ export default function App() {
 
               <button 
                 onClick={() => {
+                  voiceCoach.playClick();
                   setCurrentGame(null);
                   setCurrentTab('learn');
                 }}
@@ -395,6 +408,7 @@ export default function App() {
 
               <button 
                 onClick={() => {
+                  voiceCoach.playClick();
                   setCurrentGame(null);
                   setCurrentTab('trophy');
                 }}

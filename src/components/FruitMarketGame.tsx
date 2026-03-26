@@ -23,7 +23,7 @@ export function FruitMarketGame({ language, onBack, setDoveMessage, setDoveCheer
   const [streak, setStreak] = useState(0);
   const [basketFruits, setBasketFruits] = useState<string[]>([]);
 
-  const fruitWords = words.filter(w => w.category === 'Food' || w.category === 'Nature');
+  const fruitWords = React.useMemo(() => words.filter(w => w.category === 'Food' || w.category === 'Nature'), []);
   const currentWord = fruitWords[currentWordIndex];
 
   const generateOptions = useCallback((correctWord: any) => {
@@ -113,6 +113,7 @@ export function FruitMarketGame({ language, onBack, setDoveMessage, setDoveCheer
         <div className="flex gap-4">
           <button 
             onClick={() => {
+              voiceCoach.playClick();
               setScore(0);
               setCurrentWordIndex(0);
               setLevel(1);
@@ -125,7 +126,10 @@ export function FruitMarketGame({ language, onBack, setDoveMessage, setDoveCheer
             Play Again
           </button>
           <button 
-            onClick={onBack}
+            onClick={() => {
+              voiceCoach.playClick();
+              onBack();
+            }}
             className="bg-gray-400 text-white px-8 py-4 rounded-2xl font-black text-base shadow-[0_6px_0_rgb(107,114,128)] active:translate-y-1 active:shadow-none"
           >
             Back to Games
@@ -139,7 +143,10 @@ export function FruitMarketGame({ language, onBack, setDoveMessage, setDoveCheer
     <div className="w-full h-full flex flex-col items-center justify-start bg-sky-50 p-4 relative overflow-hidden">
       <div className="w-full flex justify-between items-center z-10 mb-4">
         <button 
-          onClick={onBack}
+          onClick={() => {
+            voiceCoach.playClick();
+            onBack();
+          }}
           className="w-14 h-14 bg-white rounded-full flex items-center justify-center shadow-md text-xl"
         >
           🏠
@@ -178,7 +185,10 @@ export function FruitMarketGame({ language, onBack, setDoveMessage, setDoveCheer
               key={`${option.id}-${i}`}
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
-              onClick={() => handleDrop(option)}
+              onClick={() => {
+                voiceCoach.playClick();
+                handleDrop(option);
+              }}
               className="w-[64px] h-[64px] bg-white rounded-xl shadow-lg border-2 border-gray-100 flex items-center justify-center text-4xl"
             >
               {option.emoji}

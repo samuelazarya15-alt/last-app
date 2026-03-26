@@ -10,10 +10,11 @@
         "language": { "type": "string" },
         "stars": { "type": "number" },
         "level": { "type": "number" },
+        "role": { "type": "string", "enum": ["admin", "user"] },
         "createdAt": { "type": "string", "format": "date-time" },
         "updatedAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["uid", "name", "language", "stars", "level", "createdAt"]
+      "required": ["uid", "name", "language", "stars", "level", "role", "createdAt"]
     },
     "GameSession": {
       "title": "GameSession",

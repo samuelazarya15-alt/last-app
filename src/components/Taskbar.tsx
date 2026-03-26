@@ -22,7 +22,13 @@ export function Taskbar({ currentTab, setCurrentTab }: TaskbarProps) {
         return (
           <motion.button
             key={tab.id}
-            onClick={() => setCurrentTab(tab.id)}
+            onClick={() => {
+              // Only play click if it's a new tab
+              if (currentTab !== tab.id) {
+                import('../lib/VoiceCoach').then(m => m.voiceCoach.playClick());
+              }
+              setCurrentTab(tab.id);
+            }}
             className="relative flex flex-col items-center justify-center outline-none w-1/4"
             whileTap={{ scale: 0.9 }}
           >

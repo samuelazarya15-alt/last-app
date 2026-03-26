@@ -13,6 +13,7 @@ export function DoveMascot({ isCheering, size = "12vh", relative = false }: { is
   }, []);
 
   const toggleMute = () => {
+    voiceCoach.playClick();
     setIsMuted(voiceCoach.toggleMute());
   };
 

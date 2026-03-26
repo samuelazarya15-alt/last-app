@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import wordsData from '../data/words.json';
 import { GameTimer } from './GameTimer';
 import { logGameSession } from '../lib/progress';
+import { voiceCoach } from '../lib/VoiceCoach';
 
 interface FlyDoveGameProps {
   language: string | null;
@@ -64,6 +65,7 @@ export function FlyDoveGame({ language, onBack, setDoveMessage, setDoveCheering 
     if (isFlying) return;
     const currentWord = words[currentWordIndex];
     if (selectedWord === currentWord.tigrinya) {
+      voiceCoach.playCorrect();
       setIsFlying(true);
       setDoveCheering(true);
       setDoveMessage("Woohoo! The dove is flying higher!");
@@ -81,6 +83,7 @@ export function FlyDoveGame({ language, onBack, setDoveMessage, setDoveCheering 
         }
       }, 2000);
     } else {
+      voiceCoach.playIncorrect();
       setDoveMessage("Oh no! The dove needs the right word to fly. Try again!");
     }
   };
@@ -94,7 +97,10 @@ export function FlyDoveGame({ language, onBack, setDoveMessage, setDoveCheering 
     <div className="w-full h-full p-6 pb-32 flex flex-col items-center justify-start bg-sky-100 relative overflow-hidden">
       <div className="w-full flex justify-between items-center z-10 mb-4 mt-2">
         <button 
-          onClick={onBack}
+          onClick={() => {
+            voiceCoach.playClick();
+            onBack();
+          }}
           className="bg-white text-blue-500 font-black px-6 py-3 rounded-full shadow-[0_4px_0_rgb(191,219,254)] active:translate-y-1 active:shadow-none z-10 text-sm"
         >
           ← Back
@@ -139,7 +145,10 @@ export function FlyDoveGame({ language, onBack, setDoveMessage, setDoveCheering 
               key={index}
               whileHover={{ scale: 1.05, x: -5 }}
               whileTap={{ scale: 0.95 }}
-              onClick={() => handleFly(option)}
+              onClick={() => {
+                voiceCoach.playClick();
+                handleFly(option);
+              }}
               disabled={isFlying}
               className={`bg-white text-sky-600 text-sm font-black w-[56px] h-[56px] rounded-full border-2 border-sky-200 shadow-md active:translate-y-1 active:shadow-none transition-all flex items-center justify-center ${isFlying ? 'opacity-50 cursor-not-allowed' : ''}`}
             >

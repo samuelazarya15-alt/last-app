@@ -113,6 +113,7 @@ export function HideAndSeekGame({ language, onBack, setDoveMessage, setDoveCheer
         <div className="flex gap-4">
           <button 
             onClick={() => {
+              voiceCoach.playClick();
               setScore(0);
               setLevel(1);
               setGameOver(false);
@@ -123,7 +124,10 @@ export function HideAndSeekGame({ language, onBack, setDoveMessage, setDoveCheer
             Play Again
           </button>
           <button 
-            onClick={onBack}
+            onClick={() => {
+              voiceCoach.playClick();
+              onBack();
+            }}
             className="bg-gray-400 text-white px-8 py-4 rounded-2xl font-black text-base shadow-[0_6px_0_rgb(107,114,128)] active:translate-y-1 active:shadow-none"
           >
             Back to Games
@@ -137,7 +141,10 @@ export function HideAndSeekGame({ language, onBack, setDoveMessage, setDoveCheer
     <div className="w-full h-full flex flex-col items-center justify-start bg-amber-50 p-4 relative overflow-hidden">
       <div className="w-full flex justify-between items-center z-10 mb-4">
         <button 
-          onClick={onBack}
+          onClick={() => {
+            voiceCoach.playClick();
+            onBack();
+          }}
           className="w-14 h-14 bg-white rounded-full flex items-center justify-center shadow-md text-xl"
         >
           🏠
@@ -178,7 +185,10 @@ export function HideAndSeekGame({ language, onBack, setDoveMessage, setDoveCheer
               exit={{ opacity: 0, scale: 0 }}
               whileHover={{ scale: opt.scale * 1.1 }}
               whileTap={{ scale: opt.scale * 0.9 }}
-              onClick={() => handleSelect(opt)}
+              onClick={() => {
+                voiceCoach.playClick();
+                handleSelect(opt);
+              }}
               className="absolute text-2xl drop-shadow-lg flex items-center justify-center"
               style={{
                 left: `${opt.x}%`,

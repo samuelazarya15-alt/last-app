@@ -16,7 +16,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const handleSfxChange = (val: number) => {
     setSfxVol(val);
     voiceCoach.setSfxVolume(val / 100);
-    voiceCoach.playSfx('pop');
+    voiceCoach.playClick();
   };
 
   const handleMusicChange = (val: number) => {
@@ -52,7 +52,10 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             <div className="flex justify-between items-center mb-8">
               <h2 className="text-base font-black text-blue-600 uppercase tracking-tight">Settings</h2>
               <button 
-                onClick={onClose}
+                onClick={() => {
+                  voiceCoach.playClick();
+                  onClose();
+                }}
                 className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center text-gray-500 hover:bg-gray-200 transition-colors"
               >
                 <X size={20} />
@@ -115,7 +118,10 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             </div>
 
             <button
-              onClick={onClose}
+              onClick={() => {
+                voiceCoach.playClick();
+                onClose();
+              }}
               className="w-full mt-10 bg-blue-500 text-white text-sm font-black py-4 rounded-2xl shadow-[0_6px_0_rgb(37,99,235)] active:translate-y-1 active:shadow-none transition-all"
             >
               DONE

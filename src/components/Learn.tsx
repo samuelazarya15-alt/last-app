@@ -74,7 +74,10 @@ export function Learn({ language }: { language: string }) {
           {CATEGORIES.map((cat) => (
             <button
               key={cat}
-              onClick={() => setSelectedCategory(cat)}
+              onClick={() => {
+                voiceCoach.playClick();
+                setSelectedCategory(cat);
+              }}
               className={`whitespace-nowrap px-4 py-1 rounded-full text-[10px] font-black transition-all ${
                 selectedCategory === cat
                   ? 'bg-blue-500 text-white shadow-md'
@@ -101,7 +104,10 @@ export function Learn({ language }: { language: string }) {
               whileTap={{ scale: 0.98 }}
               animate={isActive ? { y: [0, -5, 0] } : {}}
               transition={{ duration: 0.5 }}
-              onClick={() => playAudio(word)}
+              onClick={() => {
+                voiceCoach.playClick();
+                playAudio(word);
+              }}
               className={`bg-white rounded-2xl p-4 shadow-sm border-4 cursor-pointer flex items-center justify-between transition-all ${
                 isActive 
                   ? 'border-blue-400 shadow-[0_4px_0_rgb(37,99,235)]' 

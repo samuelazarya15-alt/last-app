@@ -57,6 +57,18 @@ export class VoiceCoach {
     }
   }
 
+  playClick() {
+    this.playSfx('pop');
+  }
+
+  playCorrect() {
+    this.playSfx('score');
+  }
+
+  playIncorrect() {
+    this.playSfx('wrong');
+  }
+
   playMusic(url: string) {
     if (this.bgMusic) {
       this.bgMusic.pause();
