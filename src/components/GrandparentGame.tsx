@@ -1,6 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ArrowLeft, Heart } from 'lucide-react';
+import { ArrowLeft, Heart, Trophy, Timer } from 'lucide-react';
+import { logGameSession } from '../lib/progress';
+import { words } from '../data/wordHelpers';
+import { voiceCoach } from '../lib/VoiceCoach';
 
 interface GrandparentGameProps {
   language: string | null;
@@ -9,53 +12,94 @@ interface GrandparentGameProps {
   setDoveCheering: (cheering: boolean) => void;
 }
 
-const STORIES = [
-  {
-    id: 'story1',
-    title: { english: 'The Wise Owl', dutch: 'De Wijze Uil', norwegian: 'Den vise uglen', swedish: 'Den visa ugglan', german: 'Die weise Eule' },
-    content: { 
-      english: 'Once upon a time, there was a wise owl who lived in a big oak tree...', 
-      dutch: 'Er was eens een wijze uil die in een grote eikenboom woonde...',
-      norwegian: 'Det var en gang en vis ugle som bodde i et stort eiketre...',
-      swedish: 'Det var en gång en vis uggla som bodde i en stor ek...',
-      german: 'Es war einmal eine weise Eule, die in einer großen Eiche lebte...'
-    },
-    icon: '🦉'
-  },
-  {
-    id: 'story2',
-    title: { english: 'The Brave Lion', dutch: 'De Dappere Leeuw', norwegian: 'Den tapre løven', swedish: 'Det modiga lejonet', german: 'Der tapfere Löwe' },
-    content: { 
-      english: 'In the heart of the jungle, a brave lion protected all his friends...', 
-      dutch: 'In het hart van de jungle beschermde een dappere leeuw al zijn vrienden...',
-      norwegian: 'I hjertet av jungelen beskyttet en tapper løve alle vennene sine...',
-      swedish: 'I hjärtat av djungeln skyddade ett modigt lejon alla sina vänner...',
-      german: 'Im Herzen des Dschungels beschützte ein tapferer Löwe alle seine Freunde...'
-    },
-    icon: '🦁'
-  }
-];
-
 export const GrandparentGame: React.FC<GrandparentGameProps> = ({
   language,
   onBack,
   setDoveMessage,
   setDoveCheering
 }) => {
-  const [selectedStory, setSelectedStory] = useState<typeof STORIES[0] | null>(null);
-  const lang = (language || 'english') as keyof typeof STORIES[0]['title'];
+  const [score, setScore] = useState(0);
+  const [timeLeft, setTimeLeft] = useState(60);
+  const [gameState, setGameState] = useState<'start' | 'playing' | 'end'>('start');
+  const [currentTarget, setCurrentTarget] = useState<any>(null);
+  const [options, setOptions] = useState<any[]>([]);
+  const [level, setLevel] = useState(1);
 
-  const handleStorySelect = (story: typeof STORIES[0]) => {
-    setSelectedStory(story);
-    setDoveMessage("Listen to the story!");
-    setDoveCheering(true);
-    setTimeout(() => setDoveCheering(false), 2000);
+  const startGame = () => {
+    setScore(0);
+    setTimeLeft(60);
+    setLevel(1);
+    setGameState('playing');
+    nextRound(1);
+    setDoveMessage("Find the right word with your grandparent!");
   };
+
+  const nextRound = useCallback((currentLevel: number) => {
+    const familyWords = words.filter(w => w.category === 'Family' || w.category === 'People');
+    if (familyWords.length === 0) return;
+
+    let numOptions = 2;
+    if (currentLevel === 2) numOptions = 4;
+    if (currentLevel >= 3) numOptions = 6;
+
+    const target = familyWords[Math.floor(Math.random() * familyWords.length)];
+    setCurrentTarget(target);
+    
+    const opts = new Set<any>();
+    opts.add(target);
+    while (opts.size < Math.min(numOptions, familyWords.length)) {
+      const randomWord = familyWords[Math.floor(Math.random() * familyWords.length)];
+      if (randomWord) opts.add(randomWord);
+    }
+    
+    setOptions(Array.from(opts).sort(() => Math.random() - 0.5));
+    
+    const targetLang = language || 'english';
+    const translation = target.translations[targetLang as keyof typeof target.translations];
+    voiceCoach.playDualAudio(translation, targetLang, target.audioUrl);
+  }, [language]);
+
+  const handleSelect = (id: string) => {
+    if (gameState !== 'playing' || !currentTarget) return;
+
+    if (id === currentTarget.id) {
+      const newScore = score + 10;
+      setScore(newScore);
+      setDoveCheering(true);
+      voiceCoach.playCorrect();
+      
+      let nextLevel = level;
+      if (newScore > 0 && newScore % 50 === 0) {
+        nextLevel += 1;
+        setLevel(nextLevel);
+        setDoveMessage(`Level Up! You are now level ${nextLevel}!`);
+      }
+      
+      setTimeout(() => {
+        setDoveCheering(false);
+        nextRound(nextLevel);
+      }, 1000);
+    } else {
+      voiceCoach.playIncorrect();
+      setDoveMessage("Try again!");
+    }
+  };
+
+  useEffect(() => {
+    if (gameState === 'playing' && timeLeft > 0) {
+      const timer = setInterval(() => setTimeLeft(t => t - 1), 1000);
+      return () => clearInterval(timer);
+    } else if (timeLeft === 0 && gameState === 'playing') {
+      setGameState('end');
+      logGameSession('grandparent', score, 60);
+      setDoveMessage(`Great job! You scored ${score} points!`);
+    }
+  }, [timeLeft, gameState, score]);
 
   return (
     <div className="w-full h-full bg-orange-50 flex flex-col items-center p-4 relative overflow-hidden">
       {/* Header */}
-      <div className="w-full flex justify-between items-center z-10 mb-8">
+      <div className="w-full flex justify-between items-center z-10 mb-4">
         <button 
           onClick={onBack}
           className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-lg text-orange-500 hover:scale-110 transition-transform"
@@ -63,74 +107,101 @@ export const GrandparentGame: React.FC<GrandparentGameProps> = ({
           <ArrowLeft size={24} />
         </button>
         
-        <div className="bg-white px-4 py-2 rounded-2xl shadow-md flex items-center gap-2">
-          <Heart className="text-red-500" size={20} />
-          <span className="font-black text-orange-600 uppercase tracking-widest text-xs">Grandparent Mode</span>
+        <div className="flex gap-4">
+          <div className="bg-white px-4 py-2 rounded-2xl shadow-md flex items-center gap-2">
+            <Heart className="text-red-500" size={20} />
+            <span className="font-black text-orange-600 uppercase tracking-widest text-xs hidden sm:inline">Grandparent Mode</span>
+          </div>
+          <div className="bg-white px-4 py-2 rounded-2xl shadow-md flex items-center gap-2">
+            <span className="font-bold text-blue-600">Lvl {level}</span>
+          </div>
+          <div className="bg-white px-4 py-2 rounded-2xl shadow-md flex items-center gap-2">
+            <Trophy className="text-yellow-500" size={20} />
+            <span className="font-black text-orange-600">{score}</span>
+          </div>
+          <div className="bg-white px-4 py-2 rounded-2xl shadow-md flex items-center gap-2">
+            <Timer className="text-red-500" size={20} />
+            <span className="font-black text-orange-600">{timeLeft}s</span>
+          </div>
         </div>
       </div>
 
       <AnimatePresence mode="wait">
-        {!selectedStory ? (
+        {gameState === 'start' && (
           <motion.div 
-            key="list"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="flex flex-col items-center flex-1 w-full max-w-md"
+            key="start"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            className="flex flex-col items-center justify-center flex-1"
           >
             <div className="text-6xl mb-6">👵👴</div>
-            <h2 className="text-3xl font-black text-orange-600 mb-4 text-center">Story Time</h2>
-            <p className="text-gray-500 font-bold mb-8 text-center">
-              Pick a story to read with your grandparent!
+            <h2 className="text-3xl font-black text-orange-600 mb-4 text-center">Grandparent Time</h2>
+            <p className="text-gray-500 font-bold mb-8 text-center max-w-xs">
+              Find the right words together!
             </p>
+            <button 
+              onClick={startGame}
+              className="bg-orange-500 text-white px-12 py-4 rounded-3xl font-black text-2xl shadow-[0_8px_0_rgb(194,65,12)] active:translate-y-1 active:shadow-none transition-all"
+            >
+              START!
+            </button>
+          </motion.div>
+        )}
 
-            <div className="grid grid-cols-1 gap-4 w-full">
-              {STORIES.map((story) => (
+        {gameState === 'playing' && currentTarget && (
+          <motion.div 
+            key="playing"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="flex flex-col items-center justify-center flex-1 w-full max-w-md"
+          >
+            <div className="bg-white p-6 rounded-[2.5rem] shadow-xl border-4 border-orange-100 mb-12 text-center w-full">
+              <p className="text-gray-400 font-black uppercase tracking-widest mb-2">Find the Tigrinya word for:</p>
+              <h3 className="text-4xl font-black text-orange-600">{currentTarget.translations[language || 'english']}</h3>
+            </div>
+
+            <div className="grid grid-cols-2 gap-6 w-full overflow-y-auto max-h-[50vh] p-2">
+              {options.map((item) => (
                 <motion.button
-                  key={story.id}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => handleStorySelect(story)}
-                  className="bg-white p-6 rounded-[2rem] shadow-lg border-4 border-transparent hover:border-orange-400 transition-all flex items-center gap-6 text-left"
+                  key={item.id}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => handleSelect(item.id)}
+                  className="bg-white p-8 rounded-[2rem] shadow-lg border-4 border-transparent hover:border-orange-400 transition-all flex flex-col items-center justify-center gap-2"
                 >
-                  <span className="text-5xl">{story.icon}</span>
-                  <div>
-                    <h3 className="text-xl font-black text-orange-600">{story.title[lang]}</h3>
-                    <p className="text-gray-400 text-sm font-bold">Click to read</p>
-                  </div>
+                  <span className="text-5xl">{item.emoji}</span>
+                  <span className="text-2xl font-geez font-black text-orange-800">{item.translations.tigrinya}</span>
                 </motion.button>
               ))}
             </div>
           </motion.div>
-        ) : (
+        )}
+
+        {gameState === 'end' && (
           <motion.div 
-            key="story"
+            key="end"
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.9 }}
-            className="flex flex-col items-center flex-1 w-full max-w-md bg-white p-8 rounded-[3rem] shadow-xl border-4 border-orange-100 relative"
+            className="flex flex-col items-center justify-center flex-1"
           >
-            <button 
-              onClick={() => setSelectedStory(null)}
-              className="absolute top-4 right-4 text-gray-400 hover:text-orange-500"
-            >
-              Close
-            </button>
-            
-            <div className="text-6xl mb-6">{selectedStory.icon}</div>
-            <h2 className="text-3xl font-black text-orange-600 mb-6 text-center">{selectedStory.title[lang]}</h2>
-            <div className="flex-1 overflow-y-auto w-full">
-              <p className="text-xl font-bold text-gray-600 leading-relaxed text-center">
-                {selectedStory.content[lang]}
-              </p>
+            <div className="text-6xl mb-6">🏆</div>
+            <h2 className="text-3xl font-black text-orange-600 mb-2">Time Complete!</h2>
+            <p className="text-xl font-bold text-gray-500 mb-8">You scored {score} points together!</p>
+            <div className="flex gap-4">
+              <button 
+                onClick={onBack}
+                className="bg-gray-200 text-gray-600 px-8 py-4 rounded-2xl font-black shadow-[0_6px_0_rgb(209,213,219)] active:translate-y-1 active:shadow-none transition-all"
+              >
+                BACK
+              </button>
+              <button 
+                onClick={startGame}
+                className="bg-orange-500 text-white px-8 py-4 rounded-2xl font-black shadow-[0_8px_0_rgb(194,65,12)] active:translate-y-1 active:shadow-none transition-all"
+              >
+                PLAY AGAIN
+              </button>
             </div>
-            
-            <button 
-              onClick={() => setSelectedStory(null)}
-              className="mt-8 bg-orange-500 text-white px-8 py-4 rounded-2xl font-black shadow-[0_6px_0_rgb(194,65,12)] active:translate-y-1 active:shadow-none transition-all"
-            >
-              FINISH STORY
-            </button>
           </motion.div>
         )}
       </AnimatePresence>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import confetti from 'canvas-confetti';
-import WORDS from '../data/words.json';
+import { words as wordHelpersWords } from '../data/wordHelpers';
 import { GameTimer } from './GameTimer';
 import { logGameSession } from '../lib/progress';
 import { voiceCoach } from '../lib/VoiceCoach';
@@ -32,16 +32,18 @@ export function MemoryMatchGame({ language, onBack, setDoveMessage, setDoveCheer
 
   const startNewLevel = React.useCallback(() => {
     setDoveMessage("Find the matching pairs!");
-    const shuffledWords = [...WORDS].sort(() => Math.random() - 0.5).slice(0, pairsCount);
+    const shuffledWords = [...wordHelpersWords].sort(() => Math.random() - 0.5).slice(0, pairsCount);
     
     const newCards: Card[] = [];
     let idCounter = 0;
     
+    const targetLang = language || 'english';
+
     shuffledWords.forEach(word => {
       newCards.push({
         id: idCounter++,
         wordId: word.id,
-        text: word.tigrinya,
+        text: word.translations.tigrinya,
         type: 'native',
         isFlipped: false,
         isMatched: false
@@ -49,7 +51,7 @@ export function MemoryMatchGame({ language, onBack, setDoveMessage, setDoveCheer
       newCards.push({
         id: idCounter++,
         wordId: word.id,
-        text: word[language as keyof typeof word] as string,
+        text: word.translations[targetLang as keyof typeof word.translations],
         type: 'translation',
         isFlipped: false,
         isMatched: false
@@ -102,111 +104,105 @@ export function MemoryMatchGame({ language, onBack, setDoveMessage, setDoveCheer
           matchedCards[firstIndex].isMatched = true;
           matchedCards[secondIndex].isMatched = true;
           setCards(matchedCards);
+          setScore(prev => prev + 10);
+          setMatches(prev => prev + 1);
           setFlippedIndices([]);
-          setScore(s => s + 20);
-          setMatches(m => m + 1);
-          setIsAnimating(false);
           setDoveCheering(true);
-          setDoveMessage("Great match!");
-          setTimeout(() => setDoveCheering(false), 1500);
-
-          if (matches + 1 === pairsCount) {
-            // Level complete
-            voiceCoach.playSfx('success');
-            confetti({
-              particleCount: 100,
-              spread: 70,
-              origin: { y: 0.6 },
-              colors: ['#A855F7', '#3B82F6', '#10B981']
-            });
-            setTimeout(() => {
-              setLevel(l => l + 1);
-            }, 2000);
-          }
-        }, 800);
+          setDoveMessage("You found a match!");
+          
+          setTimeout(() => {
+            setDoveCheering(false);
+            setIsAnimating(false);
+            if (matches + 1 === pairsCount) {
+              voiceCoach.playSfx('success');
+              confetti({
+                particleCount: 100,
+                spread: 70,
+                origin: { y: 0.6 }
+              });
+              setDoveMessage(`Level ${level} complete!`);
+              setTimeout(() => {
+                setLevel(l => l + 1);
+              }, 2000);
+            }
+          }, 1000);
+        }, 500);
       } else {
         // No match
         setTimeout(() => {
-          voiceCoach.playSfx('wrong');
+          voiceCoach.playSfx('pop');
           const resetCards = [...newCards];
           resetCards[firstIndex].isFlipped = false;
           resetCards[secondIndex].isFlipped = false;
           setCards(resetCards);
           setFlippedIndices([]);
           setIsAnimating(false);
-        }, 1200);
+          setDoveMessage("Oops, try again!");
+        }, 1000);
       }
     }
   };
 
   return (
-    <div className="flex flex-col items-center justify-start w-full h-full p-4 pb-32 relative overflow-hidden bg-purple-100">
-      <div className="w-full flex justify-between items-center z-10 mb-2 mt-2">
+    <div className="w-full h-full bg-sky-50 flex flex-col items-center p-4 relative overflow-hidden">
+      {/* Header */}
+      <div className="w-full flex justify-between items-center z-10 mb-4">
         <button 
-          onClick={() => {
-            voiceCoach.playClick();
-            onBack();
-          }}
-          className="bg-white/90 px-4 py-2 rounded-full font-black text-purple-600 shadow-[0_4px_0_rgb(147,51,234)] active:translate-y-1 active:shadow-[0_0px_0_rgb(147,51,234)] transition-all text-base border-2 border-purple-200"
+          onClick={onBack}
+          className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-lg text-sky-500 hover:scale-110 transition-transform"
         >
-          ← Back
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
         </button>
-
-        <div className="flex gap-2">
-          <div className="bg-purple-400 px-3 py-1 rounded-full font-black text-white shadow-[0_4px_0_rgb(147,51,234)] text-base border-2 border-purple-300">
-            Lvl {level}
+        
+        <div className="flex gap-4">
+          <div className="bg-white px-4 py-2 rounded-2xl shadow-md flex items-center gap-2">
+            <span className="font-bold text-sky-500">Lvl {level}</span>
           </div>
-          <div className="bg-yellow-400 px-3 py-1 rounded-full font-black text-yellow-900 shadow-[0_4px_0_rgb(202,138,4)] text-base border-2 border-yellow-300">
-            {score} pt
+          <div className="bg-white px-4 py-2 rounded-2xl shadow-md flex items-center gap-2">
+            <span className="text-sky-500">🏆</span>
+            <span className="font-bold text-sky-700">{score}</span>
           </div>
+          <GameTimer duration={60} onTimeUp={handleTimeUp} isPaused={isAnimating} />
         </div>
       </div>
 
-      <div className="w-full z-10 mb-4">
-        <GameTimer 
-          duration={60} 
-          onTimeUp={handleTimeUp} 
-          resetKey={level} 
-          isPaused={isAnimating || matches === pairsCount}
-        />
-      </div>
-
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 w-full max-w-md z-10 mt-4">
-        {cards.map((card, index) => (
-          <motion.div
-            key={card.id}
-            className={`relative w-full aspect-square cursor-pointer ${card.isMatched ? 'opacity-0 pointer-events-none' : ''}`}
-            onClick={() => handleCardClick(index)}
-            whileHover={!card.isFlipped && !isAnimating ? { scale: 1.05 } : {}}
-            whileTap={!card.isFlipped && !isAnimating ? { scale: 0.95 } : {}}
-            style={{ perspective: 1000 }}
-          >
-            <motion.div
-              className="w-full h-full relative"
-              animate={{ rotateY: card.isFlipped ? 180 : 0 }}
-              transition={{ duration: 0.4, type: "spring", stiffness: 260, damping: 20 }}
-              style={{ transformStyle: "preserve-3d" }}
-            >
-              {/* Front of card (hidden) */}
-              <div 
-                className="absolute inset-0 bg-purple-500 rounded-xl border-4 border-purple-600 shadow-[0_4px_0_rgb(147,51,234)] flex items-center justify-center"
-                style={{ backfaceVisibility: "hidden" }}
+      {/* Main Game Area */}
+      <div className="flex-1 w-full max-w-2xl flex flex-col items-center justify-center gap-8 relative z-10">
+        <div className="grid grid-cols-4 gap-4 w-full px-4">
+          <AnimatePresence>
+            {cards.map((card, index) => (
+              <motion.div
+                key={`${card.id}-${index}`}
+                initial={{ scale: 0, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0, opacity: 0 }}
+                transition={{ delay: index * 0.05 }}
+                className="aspect-square relative perspective-1000"
               >
-                <span className="text-4xl">❓</span>
-              </div>
-
-              {/* Back of card (revealed) */}
-              <div 
-                className="absolute inset-0 bg-white rounded-xl border-4 border-purple-300 shadow-md flex items-center justify-center p-2 text-center"
-                style={{ backfaceVisibility: "hidden", transform: "rotateY(180deg)" }}
-              >
-                <span className={`font-black ${card.type === 'native' ? 'text-lg text-purple-800' : 'text-base text-blue-600'}`}>
-                  {card.text}
-                </span>
-              </div>
-            </motion.div>
-          </motion.div>
-        ))}
+                <motion.button
+                  whileHover={{ scale: card.isFlipped || card.isMatched ? 1 : 1.05 }}
+                  whileTap={{ scale: card.isFlipped || card.isMatched ? 1 : 0.95 }}
+                  onClick={() => handleCardClick(index)}
+                  className={`w-full h-full rounded-2xl shadow-lg transition-all duration-500 transform-style-3d ${
+                    card.isFlipped || card.isMatched ? 'rotate-y-180' : ''
+                  }`}
+                >
+                  {/* Front of card (hidden) */}
+                  <div className="absolute inset-0 bg-white rounded-2xl flex items-center justify-center backface-hidden border-4 border-sky-100">
+                    <span className="text-4xl">☁️</span>
+                  </div>
+                  
+                  {/* Back of card (revealed) */}
+                  <div className="absolute inset-0 bg-sky-100 rounded-2xl flex items-center justify-center backface-hidden rotate-y-180 border-4 border-sky-300">
+                    <span className={`font-bold ${card.type === 'native' ? 'font-geez text-3xl' : 'text-xl'} text-sky-800 text-center px-2`}>
+                      {card.text}
+                    </span>
+                  </div>
+                </motion.button>
+              </motion.div>
+            ))}
+          </AnimatePresence>
+        </div>
       </div>
     </div>
   );

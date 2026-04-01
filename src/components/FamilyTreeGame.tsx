@@ -1,25 +1,29 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ArrowLeft, Trophy, Timer } from 'lucide-react';
 import { logGameSession } from '../lib/progress';
 import { words } from '../data/wordHelpers';
 import { voiceCoach } from '../lib/VoiceCoach';
 
-interface FlyDoveGameProps {
+interface FamilyTreeGameProps {
   language: string | null;
   onBack: () => void;
   setDoveMessage: (msg: string) => void;
   setDoveCheering: (cheering: boolean) => void;
 }
 
-export function FlyDoveGame({ language, onBack, setDoveMessage, setDoveCheering }: FlyDoveGameProps) {
+export const FamilyTreeGame: React.FC<FamilyTreeGameProps> = ({
+  language,
+  onBack,
+  setDoveMessage,
+  setDoveCheering
+}) => {
   const [score, setScore] = useState(0);
   const [timeLeft, setTimeLeft] = useState(60);
   const [gameState, setGameState] = useState<'start' | 'playing' | 'end'>('start');
   const [currentTarget, setCurrentTarget] = useState<any>(null);
   const [options, setOptions] = useState<any[]>([]);
   const [level, setLevel] = useState(1);
-  const [isFlying, setIsFlying] = useState(false);
 
   const startGame = () => {
     setScore(0);
@@ -27,24 +31,24 @@ export function FlyDoveGame({ language, onBack, setDoveMessage, setDoveCheering 
     setLevel(1);
     setGameState('playing');
     nextRound(1);
-    setDoveMessage("Help the dove fly by choosing the correct Tigrinya word!");
+    setDoveMessage("Find the family member!");
   };
 
   const nextRound = useCallback((currentLevel: number) => {
-    const actionWords = words.filter(w => w.category === 'Verbs' || w.category === 'Nature');
-    if (actionWords.length === 0) return;
+    const familyWords = words.filter(w => w.category === 'Family');
+    if (familyWords.length === 0) return;
 
     let numOptions = 2;
-    if (currentLevel === 2) numOptions = 3;
-    if (currentLevel >= 3) numOptions = 4;
+    if (currentLevel === 2) numOptions = 4;
+    if (currentLevel >= 3) numOptions = 6;
 
-    const target = actionWords[Math.floor(Math.random() * actionWords.length)];
+    const target = familyWords[Math.floor(Math.random() * familyWords.length)];
     setCurrentTarget(target);
     
     const opts = new Set<any>();
     opts.add(target);
-    while (opts.size < Math.min(numOptions, actionWords.length)) {
-      const randomWord = actionWords[Math.floor(Math.random() * actionWords.length)];
+    while (opts.size < Math.min(numOptions, familyWords.length)) {
+      const randomWord = familyWords[Math.floor(Math.random() * familyWords.length)];
       if (randomWord) opts.add(randomWord);
     }
     
@@ -56,16 +60,13 @@ export function FlyDoveGame({ language, onBack, setDoveMessage, setDoveCheering 
   }, [language]);
 
   const handleSelect = (id: string) => {
-    if (gameState !== 'playing' || !currentTarget || isFlying) return;
+    if (gameState !== 'playing' || !currentTarget) return;
 
     if (id === currentTarget.id) {
-      voiceCoach.playCorrect();
-      setIsFlying(true);
-      setDoveCheering(true);
-      setDoveMessage("Woohoo! The dove is flying higher!");
-      
       const newScore = score + 10;
       setScore(newScore);
+      setDoveCheering(true);
+      voiceCoach.playCorrect();
       
       let nextLevel = level;
       if (newScore > 0 && newScore % 50 === 0) {
@@ -75,13 +76,12 @@ export function FlyDoveGame({ language, onBack, setDoveMessage, setDoveCheering 
       }
       
       setTimeout(() => {
-        setIsFlying(false);
         setDoveCheering(false);
         nextRound(nextLevel);
-      }, 2000);
+      }, 1000);
     } else {
       voiceCoach.playIncorrect();
-      setDoveMessage("Oh no! The dove needs the right word to fly. Try again!");
+      setDoveMessage("Try again!");
     }
   };
 
@@ -91,18 +91,18 @@ export function FlyDoveGame({ language, onBack, setDoveMessage, setDoveCheering 
       return () => clearInterval(timer);
     } else if (timeLeft === 0 && gameState === 'playing') {
       setGameState('end');
-      logGameSession('dove', score, 60);
+      logGameSession('family', score, 60);
       setDoveMessage(`Great job! You scored ${score} points!`);
     }
   }, [timeLeft, gameState, score]);
 
   return (
-    <div className="w-full h-full p-6 pb-32 flex flex-col items-center justify-start bg-sky-100 relative overflow-hidden">
+    <div className="w-full h-full bg-green-50 flex flex-col items-center p-4 relative overflow-hidden">
       {/* Header */}
-      <div className="w-full flex justify-between items-center z-10 mb-4 mt-2">
+      <div className="w-full flex justify-between items-center z-10 mb-4">
         <button 
           onClick={onBack}
-          className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-lg text-blue-500 hover:scale-110 transition-transform"
+          className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-lg text-green-500 hover:scale-110 transition-transform"
         >
           <ArrowLeft size={24} />
         </button>
@@ -113,11 +113,11 @@ export function FlyDoveGame({ language, onBack, setDoveMessage, setDoveCheering 
           </div>
           <div className="bg-white px-4 py-2 rounded-2xl shadow-md flex items-center gap-2">
             <Trophy className="text-yellow-500" size={20} />
-            <span className="font-black text-blue-600">{score}</span>
+            <span className="font-black text-green-600">{score}</span>
           </div>
           <div className="bg-white px-4 py-2 rounded-2xl shadow-md flex items-center gap-2">
             <Timer className="text-red-500" size={20} />
-            <span className="font-black text-blue-600">{timeLeft}s</span>
+            <span className="font-black text-green-600">{timeLeft}s</span>
           </div>
         </div>
       </div>
@@ -129,16 +129,16 @@ export function FlyDoveGame({ language, onBack, setDoveMessage, setDoveCheering 
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.9 }}
-            className="flex flex-col items-center justify-center flex-1 z-10"
+            className="flex flex-col items-center justify-center flex-1"
           >
-            <div className="text-6xl mb-6">🕊️</div>
-            <h2 className="text-3xl font-black text-blue-600 mb-4 text-center">Dove Flight</h2>
-            <p className="text-gray-600 font-bold mb-8 text-center max-w-xs">
-              Help the dove fly by choosing the correct Tigrinya word!
+            <div className="text-6xl mb-6">🌳</div>
+            <h2 className="text-3xl font-black text-green-600 mb-4 text-center">Family Tree</h2>
+            <p className="text-gray-500 font-bold mb-8 text-center max-w-xs">
+              Find the right family members!
             </p>
             <button 
               onClick={startGame}
-              className="bg-blue-500 text-white px-12 py-4 rounded-3xl font-black text-2xl shadow-[0_8px_0_rgb(37,99,235)] active:translate-y-1 active:shadow-none transition-all"
+              className="bg-green-500 text-white px-12 py-4 rounded-3xl font-black text-2xl shadow-[0_8px_0_rgb(21,128,61)] active:translate-y-1 active:shadow-none transition-all"
             >
               START!
             </button>
@@ -150,44 +150,27 @@ export function FlyDoveGame({ language, onBack, setDoveMessage, setDoveCheering 
             key="playing"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="flex flex-col items-center justify-center flex-1 w-full max-w-md z-10"
+            className="flex flex-col items-center justify-center flex-1 w-full max-w-md"
           >
-            <div className="bg-white p-6 rounded-[2.5rem] shadow-xl border-4 border-blue-100 mb-8 text-center w-full">
-              <p className="text-gray-400 font-black uppercase tracking-widest mb-2">Target Word:</p>
-              <h3 className="text-4xl font-black text-blue-600">{currentTarget.translations[language || 'english']}</h3>
+            <div className="bg-white p-6 rounded-[2.5rem] shadow-xl border-4 border-green-100 mb-12 text-center w-full">
+              <p className="text-gray-400 font-black uppercase tracking-widest mb-2">Find the Tigrinya word for:</p>
+              <h3 className="text-4xl font-black text-green-600">{currentTarget.translations[language || 'english']}</h3>
             </div>
 
-            <div className="grid grid-cols-2 gap-4 w-full">
+            <div className="grid grid-cols-2 gap-6 w-full overflow-y-auto max-h-[50vh] p-2">
               {options.map((item) => (
                 <motion.button
                   key={item.id}
-                  disabled={isFlying}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
                   onClick={() => handleSelect(item.id)}
-                  className="bg-white p-6 rounded-2xl shadow-lg border-4 border-transparent hover:border-blue-400 transition-all flex flex-col items-center justify-center gap-2"
+                  className="bg-white p-8 rounded-[2rem] shadow-lg border-4 border-transparent hover:border-green-400 transition-all flex flex-col items-center justify-center gap-2"
                 >
-                  <span className="text-3xl font-geez font-black text-gray-800">{item.translations.tigrinya}</span>
+                  <span className="text-5xl">{item.emoji}</span>
+                  <span className="text-2xl font-geez font-black text-green-800">{item.translations.tigrinya}</span>
                 </motion.button>
               ))}
             </div>
-
-            {/* Flying Dove Animation */}
-            <AnimatePresence>
-              {isFlying && (
-                <motion.div
-                  initial={{ y: 100, x: -100, opacity: 0, scale: 0.5 }}
-                  animate={{ 
-                    y: -300, 
-                    x: 100, 
-                    opacity: [0, 1, 1, 0],
-                    scale: [0.5, 1.5, 1.5, 0.5]
-                  }}
-                  transition={{ duration: 2, ease: "easeInOut" }}
-                  className="absolute bottom-1/4 left-1/4 text-6xl pointer-events-none z-50"
-                >
-                  🕊️
-                </motion.div>
-              )}
-            </AnimatePresence>
           </motion.div>
         )}
 
@@ -196,10 +179,10 @@ export function FlyDoveGame({ language, onBack, setDoveMessage, setDoveCheering 
             key="end"
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="flex flex-col items-center justify-center flex-1 z-10"
+            className="flex flex-col items-center justify-center flex-1"
           >
             <div className="text-6xl mb-6">🏆</div>
-            <h2 className="text-3xl font-black text-blue-600 mb-2">Time Complete!</h2>
+            <h2 className="text-3xl font-black text-green-600 mb-2">Time Complete!</h2>
             <p className="text-xl font-bold text-gray-500 mb-8">You scored {score} points!</p>
             <div className="flex gap-4">
               <button 
@@ -210,7 +193,7 @@ export function FlyDoveGame({ language, onBack, setDoveMessage, setDoveCheering 
               </button>
               <button 
                 onClick={startGame}
-                className="bg-blue-500 text-white px-8 py-4 rounded-2xl font-black shadow-[0_8px_0_rgb(37,99,235)] active:translate-y-1 active:shadow-none transition-all"
+                className="bg-green-500 text-white px-8 py-4 rounded-2xl font-black shadow-[0_8px_0_rgb(21,128,61)] active:translate-y-1 active:shadow-none transition-all"
               >
                 PLAY AGAIN
               </button>
@@ -218,24 +201,6 @@ export function FlyDoveGame({ language, onBack, setDoveMessage, setDoveCheering 
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* Clouds Background */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <motion.div 
-          animate={{ x: [-100, 500] }}
-          transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-          className="absolute top-20 left-0 text-white/50"
-        >
-          ☁️
-        </motion.div>
-        <motion.div 
-          animate={{ x: [500, -100] }}
-          transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
-          className="absolute top-40 right-0 text-white/40 text-4xl"
-        >
-          ☁️
-        </motion.div>
-      </div>
     </div>
   );
-}
+};

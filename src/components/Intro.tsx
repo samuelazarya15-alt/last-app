@@ -110,7 +110,7 @@ export const Intro: React.FC<IntroProps> = ({ onStart }) => {
         >
           <div className="absolute top-0 left-0 w-full h-2 bg-yellow-400" />
           <div className="absolute inset-0 bg-yellow-400 opacity-0 group-hover:opacity-5 transition-opacity" />
-          <span className="relative z-10 text-base font-black text-yellow-600 tracking-tighter flex items-center gap-4">
+          <span className="relative z-10 text-2xl font-black text-yellow-600 tracking-tighter flex items-center gap-4">
             START 
             <motion.span
               animate={{ x: [0, 5, 0] }}

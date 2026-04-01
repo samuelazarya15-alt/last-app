@@ -186,7 +186,13 @@ export function AnimalOrchestraGame({ language, onBack, setDoveMessage, setDoveC
         <h2 className="text-base font-black text-emerald-600">
           {mode === 'explore' 
             ? "Tap to explore!" 
-            : `Find: ${targetAnimal?.translations[language as keyof typeof targetAnimal.translations] || targetAnimal?.english}`
+            : (
+              <div className="flex flex-col items-center">
+                <span className="text-gray-500 text-xs uppercase tracking-widest mb-1">Find the:</span>
+                <span className="text-3xl font-geez text-emerald-700 mb-1">{targetAnimal?.translations.tigrinya}</span>
+                <span className="text-sm text-emerald-500">({targetAnimal?.translations[language as keyof typeof targetAnimal.translations] || targetAnimal?.english})</span>
+              </div>
+            )
           }
         </h2>
       </div>
@@ -209,9 +215,10 @@ export function AnimalOrchestraGame({ language, onBack, setDoveMessage, setDoveC
                 whileHover={{ scale: 1.1, y: -10 }}
                 whileTap={{ scale: 0.9 }}
                 onClick={() => handleTap(opt)}
-                className={`w-[48px] h-[48px] rounded-full shadow-xl border-2 flex flex-col items-center justify-center gap-2 relative overflow-hidden bg-white ${mode === 'quiz' && targetAnimal?.id === opt.id && isAnimating ? 'border-green-400 bg-green-50' : 'border-emerald-100'}`}
+                className={`w-32 h-32 rounded-3xl shadow-xl border-4 flex flex-col items-center justify-center gap-2 relative overflow-hidden bg-white ${mode === 'quiz' && targetAnimal?.id === opt.id && isAnimating ? 'border-green-400 bg-green-50' : 'border-emerald-100'}`}
               >
-                <span className="text-2xl drop-shadow-md z-10">{opt.emoji}</span>
+                <span className="text-4xl drop-shadow-md z-10">{opt.emoji}</span>
+                <span className="text-xl font-geez font-bold text-emerald-800 z-10">{opt.translations.tigrinya}</span>
               </motion.button>
             ))}
           </AnimatePresence>

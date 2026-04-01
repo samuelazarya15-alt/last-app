@@ -4,7 +4,7 @@ import confetti from 'canvas-confetti';
 import { GameTimer } from './GameTimer';
 import { voiceCoach } from '../lib/VoiceCoach';
 import { words } from '../data/wordHelpers';
-import { logGameSession, updateStats } from '../lib/progress';
+import { logGameSession } from '../lib/progress';
 
 interface SoundPopGameProps {
   language: string | null;
@@ -47,9 +47,9 @@ export function SoundPopGame({ language, onBack, setDoveMessage, setDoveCheering
     const newBubbles = options.map((opt, i) => ({
       ...opt,
       uniqueId: `${opt.id}-${Date.now()}-${i}`,
-      x: 10 + (i * (80 / options.length)), // Spread them out horizontally
-      duration: 8 - (level * 0.5) + (Math.random() * 2), // Float up speed
-      wobble: Math.random() * 20 - 10 // Horizontal wobble
+      x: 15 + (i * (70 / options.length)), // Spread them out horizontally
+      duration: Math.max(4, 8 - (level * 0.5) + (Math.random() * 2)), // Float up speed
+      wobble: Math.random() * 10 - 5 // Horizontal wobble
     }));
 
     setBubbles(newBubbles);
@@ -76,7 +76,7 @@ export function SoundPopGame({ language, onBack, setDoveMessage, setDoveCheering
     if (gameOver || isAnimating) return;
 
     voiceCoach.playSfx('pop');
-    if (word.english === targetWord?.english) {
+    if (word.id === targetWord?.id) {
       // Correct
       setIsAnimating(true);
       setDoveCheering(true);
@@ -112,7 +112,7 @@ export function SoundPopGame({ language, onBack, setDoveMessage, setDoveCheering
   const handleEscaped = useCallback((word: any) => {
     if (gameOver || isAnimating) return;
     
-    if (word.english === targetWord?.english) {
+    if (word.id === targetWord?.id) {
       setIsAnimating(true);
       voiceCoach.speak("Oh no! It floated away!", language || 'english');
       setDoveMessage("Oh no! It floated away!");
@@ -122,7 +122,6 @@ export function SoundPopGame({ language, onBack, setDoveMessage, setDoveCheering
       setBubbles(prev => prev.filter(w => w.uniqueId !== word.uniqueId));
     }
   }, [gameOver, isAnimating, targetWord, language, setDoveMessage, spawnNextWord]);
-
 
   if (gameOver) {
     return (
@@ -193,35 +192,37 @@ export function SoundPopGame({ language, onBack, setDoveMessage, setDoveCheering
       <div className="flex-1 w-full max-w-2xl relative max-h-[80vh] bg-cyan-100/50 rounded-[2rem] border-4 border-cyan-200 overflow-hidden">
         <AnimatePresence>
           {bubbles.map((word) => (
-            <motion.button
+            <motion.div
               key={word.uniqueId}
-              initial={{ y: '80vh', x: `${word.x}%`, opacity: 0, scale: 0.5 }}
+              initial={{ top: '100%', left: `${word.x}%`, opacity: 0, scale: 0.5 }}
               animate={{ 
-                y: -100, 
+                top: '-20%', 
                 opacity: 1, 
                 scale: 1,
-                x: [`${word.x}%`, `${word.x + word.wobble}%`, `${word.x - word.wobble}%`, `${word.x}%`]
+                left: [`${word.x}%`, `${word.x + word.wobble}%`, `${word.x - word.wobble}%`, `${word.x}%`]
               }}
               exit={{ opacity: 0, scale: 1.5 }} // Pop effect
               transition={{ 
-                y: { duration: Math.max(3, word.duration), ease: "linear" },
-                x: { duration: 2, repeat: Infinity, ease: "easeInOut" },
+                top: { duration: word.duration, ease: "linear" },
+                left: { duration: 2, repeat: Infinity, ease: "easeInOut" },
                 opacity: { duration: 0.2 },
                 scale: { duration: 0.2 }
               }}
               onAnimationComplete={() => handleEscaped(word)}
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 1.2 }}
-              onClick={() => {
-                voiceCoach.playClick();
-                handlePop(word);
-              }}
-              className="absolute w-24 h-24 bg-cyan-300/40 backdrop-blur-sm rounded-full shadow-[inset_0_-10px_20px_rgba(255,255,255,0.5),0_4px_10px_rgba(0,0,0,0.1)] border border-white/50 flex flex-col items-center justify-center z-20"
+              className="absolute z-20"
               style={{ transform: 'translateX(-50%)' }}
             >
-              <span className="text-2xl drop-shadow-md">{word.emoji}</span>
-              <div className="absolute top-2 right-4 w-4 h-4 bg-white/60 rounded-full blur-[1px]" />
-            </motion.button>
+              <button
+                onClick={() => {
+                  voiceCoach.playClick();
+                  handlePop(word);
+                }}
+                className="w-24 h-24 bg-cyan-300/40 backdrop-blur-sm rounded-full shadow-[inset_0_-10px_20px_rgba(255,255,255,0.5),0_4px_10px_rgba(0,0,0,0.1)] border border-white/50 flex flex-col items-center justify-center hover:scale-110 active:scale-125 transition-transform"
+              >
+                <span className="text-2xl drop-shadow-md font-geez font-bold text-sky-900">{word.translations.tigrinya}</span>
+                <div className="absolute top-2 right-4 w-4 h-4 bg-white/60 rounded-full blur-[1px]" />
+              </button>
+            </motion.div>
           ))}
         </AnimatePresence>
       </div>

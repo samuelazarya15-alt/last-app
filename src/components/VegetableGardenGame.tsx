@@ -1,7 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ArrowLeft, Trophy, Timer } from 'lucide-react';
 import { logGameSession } from '../lib/progress';
+import { words } from '../data/wordHelpers';
+import { voiceCoach } from '../lib/VoiceCoach';
 
 interface VegetableGardenGameProps {
   language: string | null;
@@ -10,13 +12,6 @@ interface VegetableGardenGameProps {
   setDoveCheering: (cheering: boolean) => void;
 }
 
-const VEGETABLES = [
-  { id: 'carrot', icon: '🥕', name: { english: 'Carrot', dutch: 'Wortel', norwegian: 'Gulrot', swedish: 'Morot', german: 'Karotte' } },
-  { id: 'broccoli', icon: '🥦', name: { english: 'Broccoli', dutch: 'Broccoli', norwegian: 'Brokkoli', swedish: 'Broccoli', german: 'Brokkoli' } },
-  { id: 'tomato', icon: '🍅', name: { english: 'Tomato', dutch: 'Tomaat', norwegian: 'Tomat', swedish: 'Tomat', german: 'Tomate' } },
-  { id: 'corn', icon: '🌽', name: { english: 'Corn', dutch: 'Maïs', norwegian: 'Mais', swedish: 'Majs', german: 'Mais' } },
-];
-
 export const VegetableGardenGame: React.FC<VegetableGardenGameProps> = ({
   language,
   onBack,
@@ -24,36 +19,70 @@ export const VegetableGardenGame: React.FC<VegetableGardenGameProps> = ({
   setDoveCheering
 }) => {
   const [score, setScore] = useState(0);
-  const [timeLeft, setTimeLeft] = useState(30);
+  const [timeLeft, setTimeLeft] = useState(60);
   const [gameState, setGameState] = useState<'start' | 'playing' | 'end'>('start');
-  const [currentTarget, setCurrentTarget] = useState(VEGETABLES[0]);
-  const [options, setOptions] = useState(VEGETABLES);
-
-  const lang = (language || 'english') as keyof typeof VEGETABLES[0]['name'];
+  const [currentTarget, setCurrentTarget] = useState<any>(null);
+  const [options, setOptions] = useState<any[]>([]);
+  const [level, setLevel] = useState(1);
 
   const startGame = () => {
     setScore(0);
-    setTimeLeft(30);
+    setTimeLeft(60);
+    setLevel(1);
     setGameState('playing');
-    nextRound();
+    nextRound(1);
     setDoveMessage("Pick the right vegetable!");
   };
 
-  const nextRound = () => {
-    const target = VEGETABLES[Math.floor(Math.random() * VEGETABLES.length)];
+  const nextRound = useCallback((currentLevel: number) => {
+    const vegWords = words.filter(w => w.category === 'Vegetables');
+    if (vegWords.length === 0) return;
+
+    let numOptions = 2;
+    if (currentLevel === 2) numOptions = 4;
+    if (currentLevel >= 3) numOptions = 6;
+
+    const availableVegs = vegWords.slice(0, Math.max(numOptions, vegWords.length));
+    const target = availableVegs[Math.floor(Math.random() * availableVegs.length)];
+    
     setCurrentTarget(target);
-    setOptions([...VEGETABLES].sort(() => Math.random() - 0.5));
-  };
+    
+    const opts = new Set<any>();
+    opts.add(target);
+    while (opts.size < Math.min(numOptions, vegWords.length)) {
+      const randomVeg = vegWords[Math.floor(Math.random() * vegWords.length)];
+      if (randomVeg) opts.add(randomVeg);
+    }
+    
+    setOptions(Array.from(opts).sort(() => Math.random() - 0.5));
+    
+    const targetLang = language || 'english';
+    const translation = target.translations[targetLang as keyof typeof target.translations];
+    voiceCoach.playDualAudio(translation, targetLang, target.audioUrl);
+  }, [language]);
 
   const handleSelect = (id: string) => {
-    if (gameState !== 'playing') return;
+    if (gameState !== 'playing' || !currentTarget) return;
 
     if (id === currentTarget.id) {
-      setScore(s => s + 1);
+      const newScore = score + 10;
+      setScore(newScore);
       setDoveCheering(true);
-      setTimeout(() => setDoveCheering(false), 1000);
-      nextRound();
+      voiceCoach.playCorrect();
+      
+      let nextLevel = level;
+      if (newScore > 0 && newScore % 50 === 0) {
+        nextLevel += 1;
+        setLevel(nextLevel);
+        setDoveMessage(`Level Up! You are now level ${nextLevel}!`);
+      }
+      
+      setTimeout(() => {
+        setDoveCheering(false);
+        nextRound(nextLevel);
+      }, 1000);
     } else {
+      voiceCoach.playIncorrect();
       setDoveMessage("Try again!");
     }
   };
@@ -64,15 +93,15 @@ export const VegetableGardenGame: React.FC<VegetableGardenGameProps> = ({
       return () => clearInterval(timer);
     } else if (timeLeft === 0 && gameState === 'playing') {
       setGameState('end');
-      logGameSession('garden', score, 30);
-      setDoveMessage(`Great job! You picked ${score} vegetables!`);
+      logGameSession('garden', score, 60);
+      setDoveMessage(`Great job! You scored ${score} points!`);
     }
   }, [timeLeft, gameState, score]);
 
   return (
     <div className="w-full h-full bg-emerald-50 flex flex-col items-center p-4 relative overflow-hidden">
       {/* Header */}
-      <div className="w-full flex justify-between items-center z-10 mb-8">
+      <div className="w-full flex justify-between items-center z-10 mb-4">
         <button 
           onClick={onBack}
           className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-lg text-emerald-500 hover:scale-110 transition-transform"
@@ -81,6 +110,9 @@ export const VegetableGardenGame: React.FC<VegetableGardenGameProps> = ({
         </button>
         
         <div className="flex gap-4">
+          <div className="bg-white px-4 py-2 rounded-2xl shadow-md flex items-center gap-2">
+            <span className="font-bold text-blue-600">Lvl {level}</span>
+          </div>
           <div className="bg-white px-4 py-2 rounded-2xl shadow-md flex items-center gap-2">
             <Trophy className="text-yellow-500" size={20} />
             <span className="font-black text-emerald-600">{score}</span>
@@ -104,7 +136,7 @@ export const VegetableGardenGame: React.FC<VegetableGardenGameProps> = ({
             <div className="text-6xl mb-6">🥕</div>
             <h2 className="text-3xl font-black text-emerald-600 mb-4 text-center">Vegetable Garden</h2>
             <p className="text-gray-500 font-bold mb-8 text-center max-w-xs">
-              Pick the right vegetable from the garden as fast as you can!
+              Pick the right vegetable from the garden and learn Tigrinya names!
             </p>
             <button 
               onClick={startGame}
@@ -115,7 +147,7 @@ export const VegetableGardenGame: React.FC<VegetableGardenGameProps> = ({
           </motion.div>
         )}
 
-        {gameState === 'playing' && (
+        {gameState === 'playing' && currentTarget && (
           <motion.div 
             key="playing"
             initial={{ opacity: 0 }}
@@ -123,8 +155,8 @@ export const VegetableGardenGame: React.FC<VegetableGardenGameProps> = ({
             className="flex flex-col items-center justify-center flex-1 w-full max-w-md"
           >
             <div className="bg-white p-6 rounded-[2.5rem] shadow-xl border-4 border-emerald-100 mb-12 text-center w-full">
-              <p className="text-gray-400 font-black uppercase tracking-widest mb-2">Pick the:</p>
-              <h3 className="text-4xl font-black text-emerald-600">{currentTarget.name[lang]}</h3>
+              <p className="text-gray-400 font-black uppercase tracking-widest mb-2">Find the Tigrinya word for:</p>
+              <h3 className="text-4xl font-black text-emerald-600">{currentTarget.translations[language || 'english']}</h3>
             </div>
 
             <div className="grid grid-cols-2 gap-6 w-full">
@@ -134,9 +166,10 @@ export const VegetableGardenGame: React.FC<VegetableGardenGameProps> = ({
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => handleSelect(veg.id)}
-                  className="bg-white p-8 rounded-[2rem] shadow-lg border-4 border-transparent hover:border-emerald-400 transition-all flex items-center justify-center text-6xl"
+                  className="bg-white p-8 rounded-[2rem] shadow-lg border-4 border-transparent hover:border-emerald-400 transition-all flex flex-col items-center justify-center gap-2"
                 >
-                  {veg.icon}
+                  <span className="text-6xl">{veg.emoji}</span>
+                  <span className="text-2xl font-geez font-bold text-emerald-800">{veg.translations.tigrinya}</span>
                 </motion.button>
               ))}
             </div>
@@ -152,7 +185,7 @@ export const VegetableGardenGame: React.FC<VegetableGardenGameProps> = ({
           >
             <div className="text-6xl mb-6">🏆</div>
             <h2 className="text-3xl font-black text-emerald-600 mb-2">Garden Harvested!</h2>
-            <p className="text-xl font-bold text-gray-500 mb-8">You picked {score} vegetables!</p>
+            <p className="text-xl font-bold text-gray-500 mb-8">You scored {score} points!</p>
             <div className="flex gap-4">
               <button 
                 onClick={onBack}

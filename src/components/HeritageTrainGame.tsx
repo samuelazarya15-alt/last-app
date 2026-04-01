@@ -23,20 +23,20 @@ export function HeritageTrainGame({ language, onBack, setDoveMessage, setDoveChe
   const [isAnimating, setIsAnimating] = useState(false);
 
   const spawnNextLetter = useCallback(() => {
-    // Pick a random word to get its starting letter
+    // Pick a random word to get its starting letter in Tigrinya
     const targetWord = words[Math.floor(Math.random() * words.length)];
-    const letter = targetWord.english.charAt(0).toUpperCase();
+    const letter = targetWord.translations.tigrinya.charAt(0);
     setTargetLetter(letter);
 
-    voiceCoach.speak(`Find words starting with ${letter}!`, language || 'english');
+    voiceCoach.speak(`Find words starting with this letter!`, language || 'english');
     setDoveMessage(`Find words starting with ${letter}!`);
 
     // Find 1-2 words starting with this letter
-    const correctWords = words.filter(w => w.english.charAt(0).toUpperCase() === letter);
+    const correctWords = words.filter(w => w.translations.tigrinya.charAt(0) === letter);
     const selectedCorrect = correctWords.sort(() => 0.5 - Math.random()).slice(0, 1 + Math.floor(Math.random() * 2));
 
     // Fill the rest with wrong words
-    const wrongWords = words.filter(w => w.english.charAt(0).toUpperCase() !== letter);
+    const wrongWords = words.filter(w => w.translations.tigrinya.charAt(0) !== letter);
     const selectedWrong = wrongWords.sort(() => 0.5 - Math.random()).slice(0, 4 - selectedCorrect.length);
 
     const newOptions = [...selectedCorrect, ...selectedWrong].sort(() => 0.5 - Math.random());
@@ -62,7 +62,7 @@ export function HeritageTrainGame({ language, onBack, setDoveMessage, setDoveChe
   const handleLoadCar = useCallback((word: any) => {
     if (gameOver || isAnimating) return;
 
-    if (word.english.charAt(0).toUpperCase() === targetLetter) {
+    if (word.translations.tigrinya.charAt(0) === targetLetter) {
       // Correct
       voiceCoach.playCorrect();
       setIsAnimating(true);
@@ -85,7 +85,7 @@ export function HeritageTrainGame({ language, onBack, setDoveMessage, setDoveChe
       setTimeout(() => {
         setDoveCheering(false);
         // Check if there are any more correct words
-        const remainingCorrect = options.filter(w => w.id !== word.id && w.english.charAt(0).toUpperCase() === targetLetter);
+        const remainingCorrect = options.filter(w => w.id !== word.id && w.translations.tigrinya.charAt(0) === targetLetter);
         if (remainingCorrect.length === 0) {
            // Train departs!
            setIsAnimating(true);
@@ -198,7 +198,7 @@ export function HeritageTrainGame({ language, onBack, setDoveMessage, setDoveChe
                 className="bg-white p-4 rounded-2xl shadow-md border-4 border-stone-100 flex items-center justify-center gap-4"
               >
                 <span className="text-2xl">{opt.emoji}</span>
-                <span className="text-sm font-bold text-stone-700 uppercase">{opt.english}</span>
+                <span className="text-xl font-geez font-bold text-stone-700">{opt.translations.tigrinya}</span>
               </motion.button>
             ))}
           </AnimatePresence>

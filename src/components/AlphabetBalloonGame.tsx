@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ArrowLeft, Trophy, Timer } from 'lucide-react';
 import { logGameSession } from '../lib/progress';
+import { voiceCoach } from '../lib/VoiceCoach';
 
 interface AlphabetBalloonGameProps {
   language: string | null;
@@ -10,7 +11,7 @@ interface AlphabetBalloonGameProps {
   setDoveCheering: (cheering: boolean) => void;
 }
 
-const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+const GEEZ_LETTERS = ['ሀ', 'ለ', 'ሐ', 'መ', 'ሠ', 'ረ', 'ሰ', 'ሸ', 'ቀ', 'በ', 'ተ', 'ቸ', 'ነ', 'ኘ', 'አ', 'ከ', 'ኸ', 'ወ', 'ዐ', 'ዘ', 'ዠ', 'የ', 'ደ', 'ጀ', 'ገ', 'ጠ', 'ጨ', 'ጰ', 'ጸ', 'ፀ', 'ፈ', 'ፐ', 'ቨ'];
 
 export const AlphabetBalloonGame: React.FC<AlphabetBalloonGameProps> = ({
   language,
@@ -19,40 +20,56 @@ export const AlphabetBalloonGame: React.FC<AlphabetBalloonGameProps> = ({
   setDoveCheering
 }) => {
   const [score, setScore] = useState(0);
-  const [timeLeft, setTimeLeft] = useState(30);
+  const [timeLeft, setTimeLeft] = useState(60);
   const [gameState, setGameState] = useState<'start' | 'playing' | 'end'>('start');
-  const [currentTarget, setCurrentTarget] = useState('A');
+  const [currentTarget, setCurrentTarget] = useState('ሀ');
   const [options, setOptions] = useState<string[]>([]);
+  const [level, setLevel] = useState(1);
 
   const startGame = () => {
     setScore(0);
-    setTimeLeft(30);
+    setTimeLeft(60);
+    setLevel(1);
     setGameState('playing');
-    nextRound();
+    nextRound(1);
     setDoveMessage("Pop the right balloon!");
   };
 
-  const nextRound = () => {
-    const target = LETTERS[Math.floor(Math.random() * LETTERS.length)];
+  const nextRound = useCallback((currentLevel: number) => {
+    const target = GEEZ_LETTERS[Math.floor(Math.random() * GEEZ_LETTERS.length)];
     setCurrentTarget(target);
     
+    const numOptions = Math.min(2 + currentLevel * 2, 8); // 4, 6, 8 options
     const opts = new Set<string>();
     opts.add(target);
-    while (opts.size < 4) {
-      opts.add(LETTERS[Math.floor(Math.random() * LETTERS.length)]);
+    while (opts.size < numOptions) {
+      opts.add(GEEZ_LETTERS[Math.floor(Math.random() * GEEZ_LETTERS.length)]);
     }
     setOptions(Array.from(opts).sort(() => Math.random() - 0.5));
-  };
+  }, []);
 
   const handleSelect = (letter: string) => {
     if (gameState !== 'playing') return;
 
     if (letter === currentTarget) {
-      setScore(s => s + 1);
+      const newScore = score + 10;
+      setScore(newScore);
       setDoveCheering(true);
-      setTimeout(() => setDoveCheering(false), 1000);
-      nextRound();
+      voiceCoach.playCorrect();
+      
+      let nextLevel = level;
+      if (newScore > 0 && newScore % 50 === 0) {
+        nextLevel += 1;
+        setLevel(nextLevel);
+        setDoveMessage(`Level Up! You are now level ${nextLevel}!`);
+      }
+      
+      setTimeout(() => {
+        setDoveCheering(false);
+        nextRound(nextLevel);
+      }, 1000);
     } else {
+      voiceCoach.playIncorrect();
       setDoveMessage("Try again!");
     }
   };
@@ -63,15 +80,15 @@ export const AlphabetBalloonGame: React.FC<AlphabetBalloonGameProps> = ({
       return () => clearInterval(timer);
     } else if (timeLeft === 0 && gameState === 'playing') {
       setGameState('end');
-      logGameSession('balloon', score, 30);
-      setDoveMessage(`Great job! You popped ${score} balloons!`);
+      logGameSession('balloon', score, 60);
+      setDoveMessage(`Great job! You scored ${score} points!`);
     }
   }, [timeLeft, gameState, score]);
 
   return (
     <div className="w-full h-full bg-red-50 flex flex-col items-center p-4 relative overflow-hidden">
       {/* Header */}
-      <div className="w-full flex justify-between items-center z-10 mb-8">
+      <div className="w-full flex justify-between items-center z-10 mb-4">
         <button 
           onClick={onBack}
           className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-lg text-red-500 hover:scale-110 transition-transform"
@@ -80,6 +97,9 @@ export const AlphabetBalloonGame: React.FC<AlphabetBalloonGameProps> = ({
         </button>
         
         <div className="flex gap-4">
+          <div className="bg-white px-4 py-2 rounded-2xl shadow-md flex items-center gap-2">
+            <span className="font-bold text-blue-600">Lvl {level}</span>
+          </div>
           <div className="bg-white px-4 py-2 rounded-2xl shadow-md flex items-center gap-2">
             <Trophy className="text-yellow-500" size={20} />
             <span className="font-black text-red-600">{score}</span>
@@ -103,7 +123,7 @@ export const AlphabetBalloonGame: React.FC<AlphabetBalloonGameProps> = ({
             <div className="text-6xl mb-6">🎈</div>
             <h2 className="text-3xl font-black text-red-600 mb-4 text-center">Alphabet Balloon</h2>
             <p className="text-gray-500 font-bold mb-8 text-center max-w-xs">
-              Pop the balloon with the correct letter as fast as you can!
+              Pop the balloon with the correct Tigrinya letter as fast as you can!
             </p>
             <button 
               onClick={startGame}
@@ -119,23 +139,23 @@ export const AlphabetBalloonGame: React.FC<AlphabetBalloonGameProps> = ({
             key="playing"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="flex flex-col items-center justify-center flex-1 w-full max-w-md"
+            className="flex flex-col items-center justify-start flex-1 w-full max-w-md"
           >
-            <div className="bg-white p-6 rounded-[2.5rem] shadow-xl border-4 border-red-100 mb-12 text-center w-full">
-              <p className="text-gray-400 font-black uppercase tracking-widest mb-2">Pop the:</p>
-              <h3 className="text-4xl font-black text-red-600">{currentTarget}</h3>
+            <div className="bg-white p-4 rounded-[2rem] shadow-xl border-4 border-red-100 mb-6 text-center w-full">
+              <p className="text-gray-400 font-black uppercase tracking-widest mb-1">Pop the:</p>
+              <h3 className="text-5xl font-geez font-black text-red-600">{currentTarget}</h3>
             </div>
 
-            <div className="grid grid-cols-2 gap-6 w-full">
-              {options.map((letter) => (
+            <div className={`grid ${options.length > 4 ? 'grid-cols-3' : 'grid-cols-2'} gap-4 w-full overflow-y-auto max-h-[50vh] p-2`}>
+              {options.map((letter, i) => (
                 <motion.button
-                  key={letter}
+                  key={`${letter}-${i}`}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => handleSelect(letter)}
-                  className="bg-white p-8 rounded-[2rem] shadow-lg border-4 border-transparent hover:border-red-400 transition-all flex items-center justify-center text-5xl font-black text-red-500 aspect-square relative"
+                  className="bg-white p-4 rounded-[1.5rem] shadow-md border-4 border-transparent hover:border-red-400 transition-all flex items-center justify-center text-5xl font-geez font-black text-red-500 aspect-square relative"
                 >
-                  <div className="absolute inset-0 flex items-center justify-center text-7xl opacity-20">🎈</div>
+                  <div className="absolute inset-0 flex items-center justify-center text-6xl opacity-20">🎈</div>
                   <span className="relative z-10">{letter}</span>
                 </motion.button>
               ))}
@@ -151,8 +171,8 @@ export const AlphabetBalloonGame: React.FC<AlphabetBalloonGameProps> = ({
             className="flex flex-col items-center justify-center flex-1"
           >
             <div className="text-6xl mb-6">🏆</div>
-            <h2 className="text-3xl font-black text-red-600 mb-2">Balloons Popped!</h2>
-            <p className="text-xl font-bold text-gray-500 mb-8">You popped {score} balloons!</p>
+            <h2 className="text-3xl font-black text-red-600 mb-2">Well Done!</h2>
+            <p className="text-xl font-bold text-gray-500 mb-8">You scored {score} points!</p>
             <div className="flex gap-4">
               <button 
                 onClick={onBack}

@@ -1,7 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ArrowLeft, Trophy, Timer } from 'lucide-react';
 import { logGameSession } from '../lib/progress';
+import { words } from '../data/wordHelpers';
+import { voiceCoach } from '../lib/VoiceCoach';
 
 interface HoneyBeeGameProps {
   language: string | null;
@@ -10,13 +12,6 @@ interface HoneyBeeGameProps {
   setDoveCheering: (cheering: boolean) => void;
 }
 
-const FLOWERS = [
-  { id: 'red', icon: '🌹', color: 'bg-red-400', name: { english: 'Red', dutch: 'Rood', norwegian: 'Rød', swedish: 'Röd', german: 'Rot' } },
-  { id: 'blue', icon: '🦋', color: 'bg-blue-400', name: { english: 'Blue', dutch: 'Blauw', norwegian: 'Blå', swedish: 'Blå', german: 'Blau' } },
-  { id: 'yellow', icon: '🌻', color: 'bg-yellow-400', name: { english: 'Yellow', dutch: 'Geel', norwegian: 'Gul', swedish: 'Gul', german: 'Gelb' } },
-  { id: 'pink', icon: '🌸', color: 'bg-pink-400', name: { english: 'Pink', dutch: 'Roze', norwegian: 'Rosa', swedish: 'Rosa', german: 'Rosa' } },
-];
-
 export const HoneyBeeGame: React.FC<HoneyBeeGameProps> = ({
   language,
   onBack,
@@ -24,36 +19,68 @@ export const HoneyBeeGame: React.FC<HoneyBeeGameProps> = ({
   setDoveCheering
 }) => {
   const [score, setScore] = useState(0);
-  const [timeLeft, setTimeLeft] = useState(30);
+  const [timeLeft, setTimeLeft] = useState(60);
   const [gameState, setGameState] = useState<'start' | 'playing' | 'end'>('start');
-  const [currentTarget, setCurrentTarget] = useState(FLOWERS[0]);
-  const [options, setOptions] = useState(FLOWERS);
-
-  const lang = (language || 'english') as keyof typeof FLOWERS[0]['name'];
+  const [currentTarget, setCurrentTarget] = useState<any>(null);
+  const [options, setOptions] = useState<any[]>([]);
+  const [level, setLevel] = useState(1);
 
   const startGame = () => {
     setScore(0);
-    setTimeLeft(30);
+    setTimeLeft(60);
+    setLevel(1);
     setGameState('playing');
-    nextRound();
+    nextRound(1);
     setDoveMessage("Help the bee find the flower!");
   };
 
-  const nextRound = () => {
-    const target = FLOWERS[Math.floor(Math.random() * FLOWERS.length)];
+  const nextRound = useCallback((currentLevel: number) => {
+    const natureWords = words.filter(w => w.category === 'Nature');
+    if (natureWords.length === 0) return;
+
+    let numOptions = 2;
+    if (currentLevel === 2) numOptions = 4;
+    if (currentLevel >= 3) numOptions = 6;
+
+    const target = natureWords[Math.floor(Math.random() * natureWords.length)];
     setCurrentTarget(target);
-    setOptions([...FLOWERS].sort(() => Math.random() - 0.5));
-  };
+    
+    const opts = new Set<any>();
+    opts.add(target);
+    while (opts.size < Math.min(numOptions, natureWords.length)) {
+      const randomWord = natureWords[Math.floor(Math.random() * natureWords.length)];
+      if (randomWord) opts.add(randomWord);
+    }
+    
+    setOptions(Array.from(opts).sort(() => Math.random() - 0.5));
+    
+    const targetLang = language || 'english';
+    const translation = target.translations[targetLang as keyof typeof target.translations];
+    voiceCoach.playDualAudio(translation, targetLang, target.audioUrl);
+  }, [language]);
 
   const handleSelect = (id: string) => {
-    if (gameState !== 'playing') return;
+    if (gameState !== 'playing' || !currentTarget) return;
 
     if (id === currentTarget.id) {
-      setScore(s => s + 1);
+      const newScore = score + 10;
+      setScore(newScore);
       setDoveCheering(true);
-      setTimeout(() => setDoveCheering(false), 1000);
-      nextRound();
+      voiceCoach.playCorrect();
+      
+      let nextLevel = level;
+      if (newScore > 0 && newScore % 50 === 0) {
+        nextLevel += 1;
+        setLevel(nextLevel);
+        setDoveMessage(`Level Up! You are now level ${nextLevel}!`);
+      }
+      
+      setTimeout(() => {
+        setDoveCheering(false);
+        nextRound(nextLevel);
+      }, 1000);
     } else {
+      voiceCoach.playIncorrect();
       setDoveMessage("Try again!");
     }
   };
@@ -64,15 +91,15 @@ export const HoneyBeeGame: React.FC<HoneyBeeGameProps> = ({
       return () => clearInterval(timer);
     } else if (timeLeft === 0 && gameState === 'playing') {
       setGameState('end');
-      logGameSession('honey', score, 30);
-      setDoveMessage(`Great job! The bee collected ${score} flowers!`);
+      logGameSession('honey', score, 60);
+      setDoveMessage(`Great job! You scored ${score} points!`);
     }
   }, [timeLeft, gameState, score]);
 
   return (
     <div className="w-full h-full bg-yellow-50 flex flex-col items-center p-4 relative overflow-hidden">
       {/* Header */}
-      <div className="w-full flex justify-between items-center z-10 mb-8">
+      <div className="w-full flex justify-between items-center z-10 mb-4">
         <button 
           onClick={onBack}
           className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-lg text-yellow-600 hover:scale-110 transition-transform"
@@ -81,6 +108,9 @@ export const HoneyBeeGame: React.FC<HoneyBeeGameProps> = ({
         </button>
         
         <div className="flex gap-4">
+          <div className="bg-white px-4 py-2 rounded-2xl shadow-md flex items-center gap-2">
+            <span className="font-bold text-blue-600">Lvl {level}</span>
+          </div>
           <div className="bg-white px-4 py-2 rounded-2xl shadow-md flex items-center gap-2">
             <Trophy className="text-yellow-500" size={20} />
             <span className="font-black text-yellow-600">{score}</span>
@@ -104,7 +134,7 @@ export const HoneyBeeGame: React.FC<HoneyBeeGameProps> = ({
             <div className="text-6xl mb-6">🐝</div>
             <h2 className="text-3xl font-black text-yellow-600 mb-4 text-center">Honey Bee</h2>
             <p className="text-gray-500 font-bold mb-8 text-center max-w-xs">
-              Help the bee find the right colored flowers!
+              Help the bee find the right words!
             </p>
             <button 
               onClick={startGame}
@@ -115,7 +145,7 @@ export const HoneyBeeGame: React.FC<HoneyBeeGameProps> = ({
           </motion.div>
         )}
 
-        {gameState === 'playing' && (
+        {gameState === 'playing' && currentTarget && (
           <motion.div 
             key="playing"
             initial={{ opacity: 0 }}
@@ -123,20 +153,21 @@ export const HoneyBeeGame: React.FC<HoneyBeeGameProps> = ({
             className="flex flex-col items-center justify-center flex-1 w-full max-w-md"
           >
             <div className="bg-white p-6 rounded-[2.5rem] shadow-xl border-4 border-yellow-100 mb-12 text-center w-full">
-              <p className="text-gray-400 font-black uppercase tracking-widest mb-2">Find the:</p>
-              <h3 className="text-4xl font-black text-yellow-600">{currentTarget.name[lang]} flower</h3>
+              <p className="text-gray-400 font-black uppercase tracking-widest mb-2">Find the Tigrinya word for:</p>
+              <h3 className="text-4xl font-black text-yellow-600">{currentTarget.translations[language || 'english']}</h3>
             </div>
 
-            <div className="grid grid-cols-2 gap-6 w-full">
+            <div className="grid grid-cols-2 gap-6 w-full overflow-y-auto max-h-[50vh] p-2">
               {options.map((flower) => (
                 <motion.button
                   key={flower.id}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => handleSelect(flower.id)}
-                  className={`bg-white p-8 rounded-[2rem] shadow-lg border-4 border-transparent hover:border-yellow-400 transition-all flex items-center justify-center text-6xl`}
+                  className={`bg-white p-8 rounded-[2rem] shadow-lg border-4 border-transparent hover:border-yellow-400 transition-all flex flex-col items-center justify-center gap-2`}
                 >
-                  {flower.icon}
+                  <span className="text-5xl">{flower.emoji}</span>
+                  <span className="text-2xl font-geez font-black text-yellow-800">{flower.translations.tigrinya}</span>
                 </motion.button>
               ))}
             </div>
@@ -152,7 +183,7 @@ export const HoneyBeeGame: React.FC<HoneyBeeGameProps> = ({
           >
             <div className="text-6xl mb-6">🍯</div>
             <h2 className="text-3xl font-black text-yellow-600 mb-2">Honey Collected!</h2>
-            <p className="text-xl font-bold text-gray-500 mb-8">The bee found {score} flowers!</p>
+            <p className="text-xl font-bold text-gray-500 mb-8">You scored {score} points!</p>
             <div className="flex gap-4">
               <button 
                 onClick={onBack}

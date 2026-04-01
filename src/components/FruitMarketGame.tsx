@@ -170,12 +170,10 @@ export function FruitMarketGame({ language, onBack, setDoveMessage, setDoveCheer
       <div className="flex-1 w-full max-w-2xl flex flex-col items-center justify-between max-h-[80vh]">
         {/* The Target Word */}
         <div className="bg-white/90 backdrop-blur-sm p-6 rounded-[2rem] shadow-xl border-4 border-white text-center w-full max-w-[85%] mb-8">
-          <h2 className="text-xl font-black text-blue-500 mb-2">
-            {currentWord?.translations[language as keyof typeof currentWord.translations] || currentWord?.english}
-          </h2>
-          <p className="text-base font-bold text-gray-400 uppercase tracking-widest">
-            {currentWord?.english}
-          </p>
+          <div className="flex flex-col items-center">
+            <span className="text-gray-500 text-xs uppercase tracking-widest mb-1">Find the Tigrinya word for:</span>
+            <span className="text-4xl text-blue-700 mb-1">{currentWord?.translations[language as keyof typeof currentWord.translations] || currentWord?.english}</span>
+          </div>
         </div>
 
         {/* The Fruits (Draggable options) */}
@@ -189,9 +187,10 @@ export function FruitMarketGame({ language, onBack, setDoveMessage, setDoveCheer
                 voiceCoach.playClick();
                 handleDrop(option);
               }}
-              className="w-[64px] h-[64px] bg-white rounded-xl shadow-lg border-2 border-gray-100 flex items-center justify-center text-4xl"
+              className="w-32 h-32 bg-white rounded-3xl shadow-lg border-4 border-gray-100 flex flex-col items-center justify-center gap-2"
             >
-              {option.emoji}
+              <span className="text-4xl">{option.emoji}</span>
+              <span className="text-xl font-geez font-bold text-gray-700">{option.translations.tigrinya}</span>
             </motion.button>
           ))}
         </div>

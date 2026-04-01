@@ -1,7 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ArrowLeft, Trophy, Timer, Sun, Moon, Star, Cloud } from 'lucide-react';
+import { ArrowLeft, Trophy, Timer } from 'lucide-react';
 import { logGameSession } from '../lib/progress';
+import { words } from '../data/wordHelpers';
+import { voiceCoach } from '../lib/VoiceCoach';
 
 interface SunMoonGameProps {
   language: string | null;
@@ -10,13 +12,6 @@ interface SunMoonGameProps {
   setDoveCheering: (cheering: boolean) => void;
 }
 
-const ITEMS = [
-  { id: 'sun', icon: <Sun size={48} />, type: 'day', name: { english: 'Sun', dutch: 'Zon', norwegian: 'Sol', swedish: 'Sol', german: 'Sonne' } },
-  { id: 'moon', icon: <Moon size={48} />, type: 'night', name: { english: 'Moon', dutch: 'Maan', norwegian: 'Måne', swedish: 'Måne', german: 'Mond' } },
-  { id: 'star', icon: <Star size={48} />, type: 'night', name: { english: 'Star', dutch: 'Ster', norwegian: 'Stjerne', swedish: 'Stjärna', german: 'Stern' } },
-  { id: 'cloud', icon: <Cloud size={48} />, type: 'day', name: { english: 'Cloud', dutch: 'Wolk', norwegian: 'Sky', swedish: 'Moln', german: 'Wolke' } },
-];
-
 export const SunMoonGame: React.FC<SunMoonGameProps> = ({
   language,
   onBack,
@@ -24,36 +19,68 @@ export const SunMoonGame: React.FC<SunMoonGameProps> = ({
   setDoveCheering
 }) => {
   const [score, setScore] = useState(0);
-  const [timeLeft, setTimeLeft] = useState(30);
+  const [timeLeft, setTimeLeft] = useState(60);
   const [gameState, setGameState] = useState<'start' | 'playing' | 'end'>('start');
-  const [currentTarget, setCurrentTarget] = useState(ITEMS[0]);
-  const [options, setOptions] = useState(ITEMS);
-
-  const lang = (language || 'english') as keyof typeof ITEMS[0]['name'];
+  const [currentTarget, setCurrentTarget] = useState<any>(null);
+  const [options, setOptions] = useState<any[]>([]);
+  const [level, setLevel] = useState(1);
 
   const startGame = () => {
     setScore(0);
-    setTimeLeft(30);
+    setTimeLeft(60);
+    setLevel(1);
     setGameState('playing');
-    nextRound();
+    nextRound(1);
     setDoveMessage("Find the day or night item!");
   };
 
-  const nextRound = () => {
-    const target = ITEMS[Math.floor(Math.random() * ITEMS.length)];
+  const nextRound = useCallback((currentLevel: number) => {
+    const timeWords = words.filter(w => w.category === 'Time');
+    if (timeWords.length === 0) return;
+
+    let numOptions = 2;
+    if (currentLevel === 2) numOptions = 4;
+    if (currentLevel >= 3) numOptions = 6;
+
+    const target = timeWords[Math.floor(Math.random() * timeWords.length)];
     setCurrentTarget(target);
-    setOptions([...ITEMS].sort(() => Math.random() - 0.5));
-  };
+    
+    const opts = new Set<any>();
+    opts.add(target);
+    while (opts.size < Math.min(numOptions, timeWords.length)) {
+      const randomWord = timeWords[Math.floor(Math.random() * timeWords.length)];
+      if (randomWord) opts.add(randomWord);
+    }
+    
+    setOptions(Array.from(opts).sort(() => Math.random() - 0.5));
+    
+    const targetLang = language || 'english';
+    const translation = target.translations[targetLang as keyof typeof target.translations];
+    voiceCoach.playDualAudio(translation, targetLang, target.audioUrl);
+  }, [language]);
 
   const handleSelect = (id: string) => {
-    if (gameState !== 'playing') return;
+    if (gameState !== 'playing' || !currentTarget) return;
 
     if (id === currentTarget.id) {
-      setScore(s => s + 1);
+      const newScore = score + 10;
+      setScore(newScore);
       setDoveCheering(true);
-      setTimeout(() => setDoveCheering(false), 1000);
-      nextRound();
+      voiceCoach.playCorrect();
+      
+      let nextLevel = level;
+      if (newScore > 0 && newScore % 50 === 0) {
+        nextLevel += 1;
+        setLevel(nextLevel);
+        setDoveMessage(`Level Up! You are now level ${nextLevel}!`);
+      }
+      
+      setTimeout(() => {
+        setDoveCheering(false);
+        nextRound(nextLevel);
+      }, 1000);
     } else {
+      voiceCoach.playIncorrect();
       setDoveMessage("Try again!");
     }
   };
@@ -64,15 +91,15 @@ export const SunMoonGame: React.FC<SunMoonGameProps> = ({
       return () => clearInterval(timer);
     } else if (timeLeft === 0 && gameState === 'playing') {
       setGameState('end');
-      logGameSession('sunmoon', score, 30);
-      setDoveMessage(`Great job! You found ${score} items!`);
+      logGameSession('sunmoon', score, 60);
+      setDoveMessage(`Great job! You scored ${score} points!`);
     }
   }, [timeLeft, gameState, score]);
 
   return (
-    <div className={`w-full h-full transition-colors duration-1000 ${currentTarget.type === 'day' ? 'bg-sky-100' : 'bg-indigo-900'} flex flex-col items-center p-4 relative overflow-hidden`}>
+    <div className={`w-full h-full transition-colors duration-1000 ${currentTarget?.english === 'Sun' || currentTarget?.english === 'Day' ? 'bg-sky-100' : 'bg-indigo-900'} flex flex-col items-center p-4 relative overflow-hidden`}>
       {/* Header */}
-      <div className="w-full flex justify-between items-center z-10 mb-8">
+      <div className="w-full flex justify-between items-center z-10 mb-4">
         <button 
           onClick={onBack}
           className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-lg text-indigo-500 hover:scale-110 transition-transform"
@@ -81,6 +108,9 @@ export const SunMoonGame: React.FC<SunMoonGameProps> = ({
         </button>
         
         <div className="flex gap-4">
+          <div className="bg-white px-4 py-2 rounded-2xl shadow-md flex items-center gap-2">
+            <span className="font-bold text-blue-600">Lvl {level}</span>
+          </div>
           <div className="bg-white px-4 py-2 rounded-2xl shadow-md flex items-center gap-2">
             <Trophy className="text-yellow-500" size={20} />
             <span className="font-black text-indigo-600">{score}</span>
@@ -107,7 +137,7 @@ export const SunMoonGame: React.FC<SunMoonGameProps> = ({
             </div>
             <h2 className="text-3xl font-black text-indigo-600 mb-4 text-center">Sun & Moon</h2>
             <p className="text-gray-500 font-bold mb-8 text-center max-w-xs">
-              Find the items that belong to the day or night!
+              Find the right words!
             </p>
             <button 
               onClick={startGame}
@@ -118,7 +148,7 @@ export const SunMoonGame: React.FC<SunMoonGameProps> = ({
           </motion.div>
         )}
 
-        {gameState === 'playing' && (
+        {gameState === 'playing' && currentTarget && (
           <motion.div 
             key="playing"
             initial={{ opacity: 0 }}
@@ -126,20 +156,21 @@ export const SunMoonGame: React.FC<SunMoonGameProps> = ({
             className="flex flex-col items-center justify-center flex-1 w-full max-w-md"
           >
             <div className="bg-white p-6 rounded-[2.5rem] shadow-xl border-4 border-indigo-100 mb-12 text-center w-full">
-              <p className="text-gray-400 font-black uppercase tracking-widest mb-2">Find the:</p>
-              <h3 className="text-4xl font-black text-indigo-600">{currentTarget.name[lang]}</h3>
+              <p className="text-gray-400 font-black uppercase tracking-widest mb-2">Find the Tigrinya word for:</p>
+              <h3 className="text-4xl font-black text-indigo-600">{currentTarget.translations[language || 'english']}</h3>
             </div>
 
-            <div className="grid grid-cols-2 gap-6 w-full">
+            <div className="grid grid-cols-2 gap-6 w-full overflow-y-auto max-h-[50vh] p-2">
               {options.map((item) => (
                 <motion.button
                   key={item.id}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => handleSelect(item.id)}
-                  className="bg-white p-8 rounded-[2rem] shadow-lg border-4 border-transparent hover:border-indigo-400 transition-all flex items-center justify-center text-indigo-500"
+                  className="bg-white p-8 rounded-[2rem] shadow-lg border-4 border-transparent hover:border-indigo-400 transition-all flex flex-col items-center justify-center gap-2"
                 >
-                  {item.icon}
+                  <span className="text-5xl">{item.emoji}</span>
+                  <span className="text-2xl font-geez font-black text-indigo-800">{item.translations.tigrinya}</span>
                 </motion.button>
               ))}
             </div>
@@ -155,7 +186,7 @@ export const SunMoonGame: React.FC<SunMoonGameProps> = ({
           >
             <div className="text-6xl mb-6">🏆</div>
             <h2 className="text-3xl font-black text-indigo-600 mb-2">Day & Night Master!</h2>
-            <p className="text-xl font-bold text-gray-500 mb-8">You found {score} items!</p>
+            <p className="text-xl font-bold text-gray-500 mb-8">You scored {score} points!</p>
             <div className="flex gap-4">
               <button 
                 onClick={onBack}

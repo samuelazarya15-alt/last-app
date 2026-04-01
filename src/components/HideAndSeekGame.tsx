@@ -167,7 +167,11 @@ export function HideAndSeekGame({ language, onBack, setDoveMessage, setDoveCheer
 
       <div className="bg-white/90 backdrop-blur-sm p-4 rounded-2xl shadow-md border-2 border-white text-center mb-4 z-10">
         <h2 className="text-xl font-black text-amber-600">
-          Find: {targetWord?.translations[language as keyof typeof targetWord.translations] || targetWord?.english}
+          <div className="flex flex-col items-center">
+            <span className="text-gray-500 text-xs uppercase tracking-widest mb-1">Find the word:</span>
+            <span className="text-3xl font-geez text-amber-700 mb-1">{targetWord?.translations.tigrinya}</span>
+            <span className="text-sm text-amber-500">({targetWord?.translations[language as keyof typeof targetWord.translations] || targetWord?.english})</span>
+          </div>
         </h2>
       </div>
 

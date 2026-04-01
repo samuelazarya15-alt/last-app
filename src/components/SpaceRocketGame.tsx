@@ -214,10 +214,11 @@ export function SpaceRocketGame({ language, onBack, setDoveMessage, setDoveCheer
                   voiceCoach.playClick();
                   handleSelect(opt);
                 }}
-                className="bg-indigo-800/80 backdrop-blur-sm p-4 rounded-2xl shadow-md border-2 border-indigo-400 flex items-center justify-center gap-4 hover:bg-indigo-700 transition-colors"
+                className="bg-indigo-800/80 backdrop-blur-sm p-4 rounded-2xl shadow-md border-2 border-indigo-400 flex flex-col items-center justify-center gap-2 hover:bg-indigo-700 transition-colors"
               >
-                <span className="text-2xl">{opt.emoji}</span>
-                <span className="text-sm font-bold text-indigo-100 uppercase">{opt.english}</span>
+                <span className="text-4xl mb-2">{opt.emoji}</span>
+                <span className="text-2xl font-geez font-black text-white">{opt.translations.tigrinya}</span>
+                <span className="text-xs font-bold text-indigo-200 uppercase">{opt.translations[language || 'english']}</span>
               </motion.button>
             ))}
           </AnimatePresence>

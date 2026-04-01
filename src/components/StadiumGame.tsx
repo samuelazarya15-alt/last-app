@@ -1,99 +1,75 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import confetti from 'canvas-confetti';
-import { Zap, Snowflake, Flame, Trophy, Star, Cloud } from 'lucide-react';
-import WORDS from '../data/words.json';
-import { GameTimer } from './GameTimer';
+import { Zap, Snowflake, Flame, Trophy, Star, Cloud, Timer, ArrowLeft } from 'lucide-react';
+import { words } from '../data/wordHelpers';
 import { logGameSession } from '../lib/progress';
-
 import { voiceCoach } from '../lib/VoiceCoach';
 
 type BallType = 'standard' | 'golden' | 'fire' | 'ice';
 
 export function StadiumGame({ language, onBack, setDoveMessage, setDoveCheering }: any) {
-  const [currentWordIndex, setCurrentWordIndex] = useState(0);
-  const [options, setOptions] = useState<string[]>([]);
   const [score, setScore] = useState(0);
-  const [highScore, setHighScore] = useState(0);
+  const [timeLeft, setTimeLeft] = useState(60);
+  const [gameState, setGameState] = useState<'start' | 'playing' | 'end'>('start');
+  const [currentTarget, setCurrentTarget] = useState<any>(null);
+  const [options, setOptions] = useState<any[]>([]);
   const [level, setLevel] = useState(1);
   const [isAnimating, setIsAnimating] = useState(false);
   const [kickedOption, setKickedOption] = useState<string | null>(null);
   const [ballType, setBallType] = useState<BallType>('standard');
-  const [isTimeFrozen, setIsTimeFrozen] = useState(false);
-  const startTime = useRef(Date.now());
 
-  const currentWord = WORDS[currentWordIndex];
-  const baseTimeLimit = Math.max(5, 15 - (level - 1) * 2);
-  const timeLimit = ballType === 'ice' ? baseTimeLimit * 2 : baseTimeLimit;
-
-  useEffect(() => {
-    // Play stadium background music
+  const startGame = () => {
+    setScore(0);
+    setTimeLeft(60);
+    setLevel(1);
+    setGameState('playing');
+    nextRound(1);
+    setDoveMessage("Kick the ball to the matching Tigrinya word!");
     voiceCoach.playMusic('https://raw.githubusercontent.com/photonstorm/phaser3-examples/master/public/assets/audio/SoundEffects/ping.mp3');
-    return () => voiceCoach.stopMusic();
-  }, []);
+  };
 
-  useEffect(() => {
-    const savedHighScore = localStorage.getItem('football_high_score');
-    if (savedHighScore) setHighScore(parseInt(savedHighScore));
-    generateOptions();
-  }, [currentWordIndex, level]);
+  const nextRound = useCallback((currentLevel: number) => {
+    const actionWords = words.filter(w => w.category === 'Action' || w.category === 'Nature');
+    if (actionWords.length === 0) return;
 
-  const generateOptions = React.useCallback(() => {
-    const correctTranslation = currentWord[language as keyof typeof currentWord] as string;
-    const otherWords = WORDS.filter(w => w.id !== currentWord.id);
-    const randomWrong1 = otherWords[Math.floor(Math.random() * otherWords.length)][language as keyof typeof currentWord] as string;
-    let randomWrong2 = otherWords[Math.floor(Math.random() * otherWords.length)][language as keyof typeof currentWord] as string;
-    while (randomWrong2 === randomWrong1) {
-      randomWrong2 = otherWords[Math.floor(Math.random() * otherWords.length)][language as keyof typeof currentWord] as string;
+    let numOptions = 2;
+    if (currentLevel === 2) numOptions = 3;
+    if (currentLevel >= 3) numOptions = 4;
+
+    const target = actionWords[Math.floor(Math.random() * actionWords.length)];
+    setCurrentTarget(target);
+    
+    const opts = new Set<any>();
+    opts.add(target);
+    while (opts.size < Math.min(numOptions, actionWords.length)) {
+      const randomWord = actionWords[Math.floor(Math.random() * actionWords.length)];
+      if (randomWord) opts.add(randomWord);
     }
     
-    const shuffled = [correctTranslation, randomWrong1, randomWrong2].sort(() => Math.random() - 0.5);
-    setOptions(shuffled);
-
+    setOptions(Array.from(opts).sort(() => Math.random() - 0.5));
+    
     // Randomly assign a special ball type (20% chance)
     const rand = Math.random();
     if (rand > 0.9) setBallType('golden');
     else if (rand > 0.8) setBallType('fire');
     else if (rand > 0.7) setBallType('ice');
     else setBallType('standard');
-    
-    setIsTimeFrozen(false);
-  }, [currentWord, language]);
 
-  const handleGameEnd = React.useCallback(async () => {
-    const duration = Math.floor((Date.now() - startTime.current) / 1000);
-    if (score > highScore) {
-      localStorage.setItem('football_high_score', score.toString());
-    }
-    await logGameSession('football', score, duration);
-    onBack();
-  }, [score, highScore, onBack]);
+    const targetLang = language || 'english';
+    const translation = target.translations[targetLang as keyof typeof target.translations];
+    voiceCoach.playDualAudio(translation, targetLang, target.audioUrl);
+  }, [language]);
 
-  const handleTimeUp = React.useCallback(() => {
-    if (isAnimating || isTimeFrozen) return;
-    voiceCoach.playIncorrect();
-    setDoveMessage("Time's up! Let's try the next one.");
-    setIsAnimating(true);
-    setTimeout(() => {
-      setIsAnimating(false);
-      if (currentWordIndex < WORDS.length - 1) {
-        setCurrentWordIndex((prev) => (prev + 1));
-      } else {
-        handleGameEnd();
-      }
-    }, 2000);
-  }, [isAnimating, isTimeFrozen, currentWordIndex, setDoveMessage, handleGameEnd]);
+  const handleSelect = (id: string) => {
+    if (gameState !== 'playing' || !currentTarget || isAnimating) return;
 
-  const handleGuess = React.useCallback((guess: string) => {
-    if (isAnimating) return;
-    
-    setKickedOption(guess);
+    setKickedOption(id);
     setIsAnimating(true);
     voiceCoach.playSfx('kick');
 
     setTimeout(() => {
-      if (guess === currentWord[language as keyof typeof currentWord]) {
-        // Correct
+      if (id === currentTarget.id) {
         voiceCoach.playCorrect();
         setDoveCheering(true);
         
@@ -116,11 +92,14 @@ export function StadiumGame({ language, onBack, setDoveMessage, setDoveCheering 
         }
 
         setDoveMessage(message);
-        setScore(s => s + points);
+        const newScore = score + points;
+        setScore(newScore);
         
-        if ((currentWordIndex + 1) % 3 === 0) {
-          setLevel(l => l + 1);
-          setDoveMessage("Level Up! Faster now!");
+        let nextLevel = level;
+        if (newScore > 0 && newScore % 50 === 0) {
+          nextLevel += 1;
+          setLevel(nextLevel);
+          setDoveMessage(`Level Up! You are now level ${nextLevel}!`);
           voiceCoach.playSfx('success');
         }
         
@@ -135,14 +114,9 @@ export function StadiumGame({ language, onBack, setDoveMessage, setDoveCheering 
           setIsAnimating(false);
           setKickedOption(null);
           setDoveCheering(false);
-          if (currentWordIndex < WORDS.length - 1) {
-            setCurrentWordIndex((prev) => (prev + 1));
-          } else {
-            handleGameEnd();
-          }
+          nextRound(nextLevel);
         }, 2000);
       } else {
-        // Wrong
         voiceCoach.playIncorrect();
         setDoveMessage("Oops! Try again!");
         setTimeout(() => {
@@ -151,7 +125,23 @@ export function StadiumGame({ language, onBack, setDoveMessage, setDoveCheering 
         }, 1000);
       }
     }, 500);
-  }, [isAnimating, currentWord, language, ballType, currentWordIndex, setDoveCheering, setDoveMessage, handleGameEnd]);
+  };
+
+  useEffect(() => {
+    if (gameState === 'playing' && timeLeft > 0) {
+      const timer = setInterval(() => setTimeLeft(t => t - 1), 1000);
+      return () => clearInterval(timer);
+    } else if (timeLeft === 0 && gameState === 'playing') {
+      setGameState('end');
+      logGameSession('football', score, 60);
+      setDoveMessage(`Great job! You scored ${score} points!`);
+      voiceCoach.stopMusic();
+    }
+  }, [timeLeft, gameState, score]);
+
+  useEffect(() => {
+    return () => voiceCoach.stopMusic();
+  }, []);
 
   const getBallStyles = () => {
     switch (ballType) {
@@ -199,159 +189,169 @@ export function StadiumGame({ language, onBack, setDoveMessage, setDoveCheering 
           {[1, 2, 3, 4].map(i => (
             <motion.div 
               key={i}
-              animate={{ opacity: [0.4, 0.8, 0.4] }}
+              animate={{ opacity: [0.5, 1, 0.5] }}
               transition={{ duration: 2, repeat: Infinity, delay: i * 0.5 }}
-              className="w-12 h-12 bg-yellow-100 rounded-full blur-xl"
+              className="w-8 h-8 rounded-full bg-yellow-100 shadow-[0_0_20px_rgba(254,240,138,0.8)]"
             />
           ))}
         </div>
 
-        {/* Pitch lines */}
-        <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-full max-w-4xl h-1/2 border-8 border-white/50 rounded-t-[50%]" style={{ transform: 'translateX(-50%) rotateX(60deg)' }}></div>
-        <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-1/2 max-w-md h-1/4 border-8 border-white/50 rounded-t-xl" style={{ transform: 'translateX(-50%) rotateX(60deg)' }}></div>
+        {/* Pitch Lines */}
+        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[150%] h-[60%] border-t-8 border-white/40 rounded-[50%] transform rotate-x-60" />
+        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[80%] h-[40%] border-t-8 border-white/40 rounded-[50%] transform rotate-x-60" />
+        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-4 h-[100%] bg-white/40" />
       </div>
 
-      <div className="w-full flex justify-between items-center z-10 mb-2 mt-2">
+      {/* Header */}
+      <div className="w-full flex justify-between items-center z-10 mb-4">
         <button 
           onClick={() => {
-            voiceCoach.playClick();
+            voiceCoach.stopMusic();
             onBack();
           }}
-          className="bg-white/90 px-4 py-2 rounded-full font-black text-blue-600 shadow-[0_4px_0_rgb(37,99,235)] active:translate-y-1 active:shadow-[0_0px_0_rgb(37,99,235)] transition-all text-base border-2 border-blue-200"
+          className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-lg text-green-500 hover:scale-110 transition-transform"
         >
-          ← Back
+          <ArrowLeft size={24} />
         </button>
-
-        <div className="flex gap-2">
-          <div className="bg-purple-500 px-3 py-1 rounded-full font-black text-white shadow-[0_4px_0_rgb(126,34,206)] text-sm flex items-center gap-1 border-2 border-purple-300">
-            <Trophy size={16} fill="currentColor" />
-            {highScore}
+        
+        <div className="flex gap-4">
+          <div className="bg-white px-4 py-2 rounded-2xl shadow-md flex items-center gap-2">
+            <span className="font-bold text-blue-600">Lvl {level}</span>
           </div>
-          <div className="bg-blue-400 px-3 py-1 rounded-full font-black text-white shadow-[0_4px_0_rgb(37,99,235)] text-base border-2 border-blue-300">
-            Lvl {level}
+          <div className="bg-white px-4 py-2 rounded-2xl shadow-md flex items-center gap-2">
+            <Trophy className="text-yellow-500" size={20} />
+            <span className="font-black text-green-600">{score}</span>
           </div>
-          <div className="bg-yellow-400 px-3 py-1 rounded-full font-black text-yellow-900 shadow-[0_4px_0_rgb(202,138,4)] text-base border-2 border-yellow-300">
-            {score} pt
+          <div className="bg-white px-4 py-2 rounded-2xl shadow-md flex items-center gap-2">
+            <Timer className="text-red-500" size={20} />
+            <span className="font-black text-green-600">{timeLeft}s</span>
           </div>
         </div>
       </div>
 
-      <div className="w-full z-10 mb-4">
-        <GameTimer 
-          duration={timeLimit} 
-          onTimeUp={handleTimeUp} 
-          resetKey={currentWordIndex} 
-          isPaused={isAnimating || isTimeFrozen}
-        />
-      </div>
-
-      {/* Jumbotron */}
-      <motion.div 
-        initial={{ y: -50, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        className="relative z-10 bg-gray-900 border-4 border-gray-700 rounded-2xl p-3 shadow-2xl mb-4 w-full max-w-sm text-center"
-      >
-        <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 w-24 h-3 bg-gray-600 rounded-t-xl"></div>
-        <h2 className="text-xl font-black text-yellow-400 tracking-wider" style={{ textShadow: '0 0 20px rgba(250, 204, 21, 0.6)' }}>
-          {currentWord.tigrinya}
-        </h2>
-        
-        {/* Ball Type Indicator */}
-        <AnimatePresence>
-          {ballType !== 'standard' && (
-            <motion.div 
-              initial={{ scale: 0, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0, opacity: 0 }}
-              className="absolute -right-4 -bottom-4 bg-white p-2 rounded-full shadow-lg border-2 border-gray-100 flex items-center gap-1"
-            >
-              {getBallIcon()}
-              <span className="text-xs font-black uppercase text-gray-600">{ballType}</span>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </motion.div>
-
-      {/* Goal Net */}
-      <div className="relative z-0 w-full max-w-xs h-24 border-t-[8px] border-l-[8px] border-r-[8px] border-white rounded-t-2xl flex items-end justify-center mb-4"
-           style={{
-             backgroundImage: 'linear-gradient(45deg, rgba(255,255,255,0.3) 25%, transparent 25%, transparent 75%, rgba(255,255,255,0.3) 75%, rgba(255,255,255,0.3)), linear-gradient(45deg, rgba(255,255,255,0.3) 25%, transparent 25%, transparent 75%, rgba(255,255,255,0.3) 75%, rgba(255,255,255,0.3))',
-             backgroundSize: '20px 20px',
-             backgroundPosition: '0 0, 10px 10px'
-           }}>
-      </div>
-
-      {/* Football Buttons */}
-      <div className="fixed bottom-24 right-4 flex flex-col gap-4 z-50">
-        {options.map((option, index) => {
-          const isKicked = kickedOption === option;
-          return (
-            <motion.button
-              key={index}
-              animate={isKicked ? { 
-                x: -150, 
-                y: -150,
-                scale: 0.5, 
-                rotate: 360,
-                opacity: 0
-              } : { 
-                x: 0,
-                y: 0, 
-                scale: 1, 
-                rotate: 0,
-                opacity: 1
-              }}
-              transition={{ duration: 0.5, type: "spring" }}
-              whileHover={!isAnimating ? { scale: 1.05, rotate: Math.random() * 10 - 5 } : {}}
-              whileTap={!isAnimating ? { scale: 0.95 } : {}}
-              onClick={() => {
-                voiceCoach.playClick();
-                handleGuess(option);
-              }}
-              disabled={isAnimating}
-              className={`rounded-full w-[64px] h-[64px] flex items-center justify-center text-base font-black border-2 active:translate-y-1 active:shadow-none transition-all relative overflow-hidden group shadow-md ${getBallStyles()} ${isKicked ? 'z-50' : 'z-10'}`}
-            >
-              {/* Football pattern overlay */}
-              <div className={`absolute inset-0 pointer-events-none flex items-center justify-center opacity-20 ${ballType === 'standard' ? 'text-black' : 'text-white'}`}>
-                <svg viewBox="0 0 100 100" className="w-full h-full object-cover">
-                  <path d="M50 0 L95 35 L75 90 L25 90 L5 35 Z" fill="none" stroke="currentColor" strokeWidth="4"/>
-                  <path d="M50 0 L50 45 M95 35 L65 60 M75 90 L50 65 M25 90 L35 60 M5 35 L35 45" stroke="currentColor" strokeWidth="4"/>
-                  <polygon points="35,45 65,45 75,65 50,85 25,65" fill="currentColor" />
-                </svg>
-              </div>
-
-              {/* Special Ball Effects */}
-              {ballType === 'fire' && (
-                <motion.div 
-                  animate={{ scale: [1, 1.2, 1], opacity: [0.2, 0.5, 0.2] }}
-                  transition={{ duration: 0.5, repeat: Infinity }}
-                  className="absolute inset-0 bg-orange-400 blur-md pointer-events-none"
-                />
-              )}
-              {ballType === 'ice' && (
-                <div className="absolute inset-0 bg-blue-100/30 backdrop-blur-[1px] pointer-events-none" />
-              )}
-
-              <span className={`relative z-10 text-center px-1 leading-tight rounded-lg backdrop-blur-sm text-xs ${ballType === 'standard' ? 'bg-white/80 text-gray-800' : 'bg-black/20 text-white'}`}>
-                {option}
-              </span>
-            </motion.button>
-          );
-        })}
-      </div>
-
-      {/* Power-up Controls (Optional: if we want manual activation, but here we use ball types) */}
-      <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-20 flex gap-4">
-        {isTimeFrozen && (
+      <AnimatePresence mode="wait">
+        {gameState === 'start' && (
           <motion.div 
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            className="bg-blue-500 text-white px-4 py-2 rounded-full font-black flex items-center gap-2 shadow-lg"
+            key="start"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            className="flex flex-col items-center justify-center flex-1 z-10"
           >
-            <Snowflake size={20} /> TIME FROZEN
+            <div className="text-6xl mb-6">⚽</div>
+            <h2 className="text-3xl font-black text-white mb-4 text-center drop-shadow-md">Word Football</h2>
+            <p className="text-white font-bold mb-8 text-center max-w-xs drop-shadow-md">
+              Kick the ball to the matching Tigrinya word!
+            </p>
+            <button 
+              onClick={startGame}
+              className="bg-white text-green-600 px-12 py-4 rounded-3xl font-black text-2xl shadow-[0_8px_0_rgb(209,213,219)] active:translate-y-1 active:shadow-none transition-all"
+            >
+              START!
+            </button>
           </motion.div>
         )}
-      </div>
+
+        {gameState === 'playing' && currentTarget && (
+          <motion.div 
+            key="playing"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="flex flex-col items-center justify-center flex-1 w-full max-w-md z-10"
+          >
+            <div className="bg-white/90 backdrop-blur-sm p-6 rounded-[2.5rem] shadow-xl border-4 border-green-100 mb-8 text-center w-full">
+              <p className="text-gray-400 font-black uppercase tracking-widest mb-2">Target Word:</p>
+              <h3 className="text-4xl font-black text-green-600">{currentTarget.translations[language || 'english']}</h3>
+            </div>
+
+            {/* Goal Posts & Options */}
+            <div className="relative w-full h-[40vh] mb-8">
+              {/* Goal Net */}
+              <div className="absolute inset-x-4 top-0 bottom-12 border-4 border-white rounded-t-lg bg-white/10"
+                style={{
+                  backgroundImage: 'linear-gradient(45deg, rgba(255,255,255,0.2) 25%, transparent 25%, transparent 75%, rgba(255,255,255,0.2) 75%, rgba(255,255,255,0.2)), linear-gradient(45deg, rgba(255,255,255,0.2) 25%, transparent 25%, transparent 75%, rgba(255,255,255,0.2) 75%, rgba(255,255,255,0.2))',
+                  backgroundSize: '20px 20px',
+                  backgroundPosition: '0 0, 10px 10px'
+                }}
+              />
+
+              <div className="absolute inset-0 grid grid-cols-2 gap-4 p-6">
+                {options.map((item, index) => (
+                  <motion.button
+                    key={item.id}
+                    disabled={isAnimating}
+                    onClick={() => handleSelect(item.id)}
+                    className={`relative bg-white/90 backdrop-blur-sm p-4 rounded-2xl shadow-lg border-4 ${
+                      kickedOption === item.id 
+                        ? item.id === currentTarget.id ? 'border-green-400 bg-green-50' : 'border-red-400 bg-red-50'
+                        : 'border-transparent hover:border-green-400'
+                    } transition-all flex flex-col items-center justify-center`}
+                  >
+                    <span className="text-3xl font-geez font-black text-gray-800">{item.translations.tigrinya}</span>
+                    {kickedOption === item.id && (
+                      <motion.div 
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        className="absolute -top-4 -right-4 text-4xl"
+                      >
+                        {item.id === currentTarget.id ? '⭐' : '❌'}
+                      </motion.div>
+                    )}
+                  </motion.button>
+                ))}
+              </div>
+
+              {/* The Football */}
+              <motion.div
+                animate={
+                  kickedOption 
+                    ? { 
+                        y: -200, 
+                        scale: 0.5, 
+                        rotate: 720,
+                        x: options.findIndex(o => o.id === kickedOption) % 2 === 0 ? -50 : 50
+                      }
+                    : { y: 0, scale: 1, rotate: 0, x: 0 }
+                }
+                transition={{ duration: 0.5, type: 'spring' }}
+                className={`absolute bottom-0 left-1/2 -translate-x-1/2 w-20 h-20 rounded-full border-4 flex items-center justify-center text-4xl shadow-xl z-20 ${getBallStyles()}`}
+              >
+                {getBallIcon() || '⚽'}
+              </motion.div>
+            </div>
+          </motion.div>
+        )}
+
+        {gameState === 'end' && (
+          <motion.div 
+            key="end"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="flex flex-col items-center justify-center flex-1 z-10"
+          >
+            <div className="text-6xl mb-6">🏆</div>
+            <h2 className="text-3xl font-black text-white mb-2 drop-shadow-md">Match Over!</h2>
+            <p className="text-xl font-bold text-white mb-8 drop-shadow-md">You scored {score} points!</p>
+            <div className="flex gap-4">
+              <button 
+                onClick={() => {
+                  voiceCoach.stopMusic();
+                  onBack();
+                }}
+                className="bg-white text-gray-600 px-8 py-4 rounded-2xl font-black shadow-[0_6px_0_rgb(209,213,219)] active:translate-y-1 active:shadow-none transition-all"
+              >
+                BACK
+              </button>
+              <button 
+                onClick={startGame}
+                className="bg-green-500 text-white px-8 py-4 rounded-2xl font-black shadow-[0_8px_0_rgb(21,128,61)] active:translate-y-1 active:shadow-none transition-all border-2 border-white"
+              >
+                PLAY AGAIN
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

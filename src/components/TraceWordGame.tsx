@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import wordsData from '../data/words.json';
+import { words as wordHelpersWords } from '../data/wordHelpers';
 import { GameTimer } from './GameTimer';
 import { logGameSession } from '../lib/progress';
 import { voiceCoach } from '../lib/VoiceCoach';
@@ -18,16 +18,25 @@ export function TraceWordGame({ language, onBack, setDoveMessage, setDoveCheerin
   const [words, setWords] = useState<any[]>([]);
   const [isAnimating, setIsAnimating] = useState(false);
   const [score, setScore] = useState(0);
+  const [level, setLevel] = useState(1);
   const startTime = useRef(Date.now());
 
   useEffect(() => {
-    // Select 5 random words for the game
-    const shuffled = [...wordsData].sort(() => 0.5 - Math.random());
-    const selected = shuffled.slice(0, 5);
+    startNewLevel(level);
+  }, [level]);
+
+  const startNewLevel = React.useCallback((currentLevel: number) => {
+    let numWords = 3;
+    if (currentLevel === 2) numWords = 5;
+    if (currentLevel >= 3) numWords = 7;
+
+    const shuffled = [...wordHelpersWords].sort(() => 0.5 - Math.random());
+    const selected = shuffled.slice(0, numWords);
     setWords(selected);
-    setTracedLetters(new Array(selected[0]?.tigrinya.length || 0).fill(false));
+    setCurrentWordIndex(0);
+    setTracedLetters(new Array(selected[0]?.translations.tigrinya.length || 0).fill(false));
     setDoveMessage("Trace the Ge'ez letters! Click on each letter to trace it.");
-  }, []);
+  }, [setDoveMessage]);
 
   const currentWord = words[currentWordIndex];
 
@@ -46,7 +55,7 @@ export function TraceWordGame({ language, onBack, setDoveMessage, setDoveCheerin
       setIsAnimating(false);
       if (currentWordIndex < words.length - 1) {
         setCurrentWordIndex(prev => prev + 1);
-        setTracedLetters(new Array(words[currentWordIndex + 1].tigrinya.length).fill(false));
+        setTracedLetters(new Array(words[currentWordIndex + 1].translations.tigrinya.length).fill(false));
       } else {
         handleGameEnd();
       }
@@ -74,10 +83,13 @@ export function TraceWordGame({ language, onBack, setDoveMessage, setDoveCheerin
           setDoveCheering(false);
           if (currentWordIndex < words.length - 1) {
             setCurrentWordIndex(prev => prev + 1);
-            setTracedLetters(new Array(words[currentWordIndex + 1].tigrinya.length).fill(false));
+            setTracedLetters(new Array(words[currentWordIndex + 1].translations.tigrinya.length).fill(false));
             setDoveMessage("Here's the next word!");
           } else {
-            handleGameEnd();
+            setDoveMessage(`Level ${level} complete!`);
+            setTimeout(() => {
+              setLevel(l => l + 1);
+            }, 1500);
           }
         }, 2000);
       } else {
@@ -88,78 +100,103 @@ export function TraceWordGame({ language, onBack, setDoveMessage, setDoveCheerin
 
   if (!currentWord) return null;
 
-  const translation = language ? currentWord[language.toLowerCase()] : currentWord.english;
+  const targetLang = language || 'english';
+  const displayTranslation = currentWord.translations[targetLang as keyof typeof currentWord.translations];
+  const geezWord = currentWord.translations.tigrinya;
 
   return (
-    <div className="w-full h-full p-6 pb-32 flex flex-col items-center justify-start bg-sky-50 relative overflow-hidden">
-      <div className="w-full flex justify-between items-center z-10 mb-4 mt-2">
+    <div className="w-full h-full bg-yellow-50 flex flex-col items-center p-4 relative overflow-hidden">
+      {/* Header */}
+      <div className="w-full flex justify-between items-center z-10 mb-4">
         <button 
-          onClick={() => {
-            voiceCoach.playClick();
-            onBack();
-          }}
-          className="bg-white text-blue-500 font-black px-6 py-3 rounded-full shadow-[0_4px_0_rgb(203,213,225)] active:translate-y-1 active:shadow-none z-10 text-sm"
+          onClick={onBack}
+          className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-lg text-yellow-500 hover:scale-110 transition-transform"
         >
-          ← Back
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
         </button>
-      </div>
-
-      <div className="w-full z-10 mb-8">
-        <GameTimer 
-          duration={20} 
-          onTimeUp={handleTimeUp} 
-          resetKey={currentWordIndex} 
-          isPaused={isAnimating}
-        />
-      </div>
-
-      <div className="text-center mb-12 z-10">
-        <h2 className="text-base font-black text-gray-800 mb-4">Trace the Word</h2>
-        <div className="bg-white px-8 py-4 rounded-full shadow-md inline-block">
-          <p className="text-base font-bold text-blue-600">{translation}</p>
+        
+        <div className="flex gap-4">
+          <div className="bg-white px-4 py-2 rounded-2xl shadow-md flex items-center gap-2">
+            <span className="font-bold text-yellow-500">Lvl {level}</span>
+          </div>
+          <div className="bg-white px-4 py-2 rounded-2xl shadow-md flex items-center gap-2">
+            <span className="text-yellow-500">🏆</span>
+            <span className="font-bold text-yellow-700">{score}</span>
+          </div>
+          <GameTimer duration={60} onTimeUp={handleTimeUp} isPaused={isAnimating} />
         </div>
       </div>
 
-      <div className="flex gap-4 z-10">
-        {currentWord.tigrinya.split('').map((letter: string, index: number) => (
-          <motion.div
-            key={`${currentWordIndex}-${index}`}
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ delay: index * 0.1, type: "spring" }}
-            className="relative"
-          >
-            {/* Background dashed letter */}
-            <div className="text-8xl md:text-9xl font-black text-gray-200 select-none" style={{ WebkitTextStroke: '2px #cbd5e1', color: 'transparent', borderStyle: 'dashed' }}>
-              {letter}
-            </div>
-            
-            {/* Foreground interactive letter */}
-            <motion.div
-              className={`absolute inset-0 text-8xl md:text-9xl font-black flex items-center justify-center cursor-pointer select-none ${tracedLetters[index] ? 'text-green-500' : 'text-transparent hover:text-green-200'}`}
-              style={tracedLetters[index] ? { WebkitTextStroke: '2px #22c55e' } : {}}
-              onClick={() => handleTrace(index)}
-              whileHover={!tracedLetters[index] ? { scale: 1.1 } : {}}
-              whileTap={!tracedLetters[index] ? { scale: 0.9 } : {}}
-            >
-              {letter}
-            </motion.div>
-            
-            {/* Sparkles when traced */}
-            <AnimatePresence>
-              {tracedLetters[index] && (
-                <motion.div
-                  initial={{ opacity: 1, scale: 0 }}
-                  animate={{ opacity: 0, scale: 2 }}
-                  exit={{ opacity: 0 }}
-                  className="absolute inset-0 flex items-center justify-center pointer-events-none"
+      {/* Main Game Area */}
+      <div className="flex-1 w-full max-w-2xl flex flex-col items-center justify-center gap-8 relative z-10">
+        
+        {/* Target Word Info */}
+        <motion.div 
+          initial={{ y: -20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          className="bg-white p-6 rounded-3xl shadow-xl text-center w-full"
+        >
+          <h2 className="text-3xl font-black text-yellow-600 mb-2">{displayTranslation}</h2>
+          <p className="text-yellow-400 font-medium">Trace the letters below</p>
+        </motion.div>
+
+        {/* Tracing Area */}
+        <div className="flex gap-4 justify-center items-center flex-wrap">
+          <AnimatePresence mode="popLayout">
+            {geezWord.split('').map((letter: string, index: number) => (
+              <motion.div
+                key={`${currentWordIndex}-${index}`}
+                initial={{ scale: 0, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0, opacity: 0 }}
+                transition={{ delay: index * 0.1 }}
+                className="relative"
+              >
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => handleTrace(index)}
+                  disabled={tracedLetters[index] || isAnimating}
+                  className={`w-24 h-32 rounded-2xl flex items-center justify-center text-6xl font-geez font-black transition-all duration-300 ${
+                    tracedLetters[index] 
+                      ? 'bg-yellow-400 text-white shadow-inner scale-105' 
+                      : 'bg-white text-gray-300 shadow-xl border-4 border-dashed border-yellow-200 hover:border-yellow-400 hover:text-yellow-200'
+                  }`}
                 >
-                  <span className="text-4xl">✨</span>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </motion.div>
-        ))}
+                  {letter}
+                </motion.button>
+                
+                {/* Sparkle effect when traced */}
+                <AnimatePresence>
+                  {tracedLetters[index] && (
+                    <motion.div
+                      initial={{ scale: 0, opacity: 1 }}
+                      animate={{ scale: 1.5, opacity: 0 }}
+                      exit={{ opacity: 0 }}
+                      className="absolute inset-0 bg-yellow-400 rounded-2xl pointer-events-none"
+                    />
+                  )}
+                </AnimatePresence>
+              </motion.div>
+            ))}
+          </AnimatePresence>
+        </div>
+
+        {/* Progress Indicator */}
+        <div className="flex gap-2 mt-8">
+          {words.map((_, idx) => (
+            <div 
+              key={idx}
+              className={`w-3 h-3 rounded-full transition-colors ${
+                idx === currentWordIndex 
+                  ? 'bg-yellow-500 scale-125' 
+                  : idx < currentWordIndex 
+                    ? 'bg-yellow-300' 
+                    : 'bg-yellow-100'
+              }`}
+            />
+          ))}
+        </div>
       </div>
     </div>
   );

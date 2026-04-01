@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import wordsData from '../data/words.json';
-import { GameTimer } from './GameTimer';
+import { ArrowLeft, Trophy, Timer } from 'lucide-react';
 import { logGameSession } from '../lib/progress';
+import { words } from '../data/wordHelpers';
 import { voiceCoach } from '../lib/VoiceCoach';
 
 interface FeedLionGameProps {
@@ -13,74 +13,71 @@ interface FeedLionGameProps {
 }
 
 export function FeedLionGame({ language, onBack, setDoveMessage, setDoveCheering }: FeedLionGameProps) {
-  const [currentWordIndex, setCurrentWordIndex] = useState(0);
-  const [words, setWords] = useState<any[]>([]);
-  const [options, setOptions] = useState<string[]>([]);
   const [score, setScore] = useState(0);
+  const [timeLeft, setTimeLeft] = useState(60);
+  const [gameState, setGameState] = useState<'start' | 'playing' | 'end'>('start');
+  const [currentTarget, setCurrentTarget] = useState<any>(null);
+  const [options, setOptions] = useState<any[]>([]);
+  const [level, setLevel] = useState(1);
   const [isEating, setIsEating] = useState(false);
-  const startTime = useRef(Date.now());
 
-  useEffect(() => {
-    // Select 5 random words for the game
-    const shuffled = [...wordsData].sort(() => 0.5 - Math.random());
-    const selected = shuffled.slice(0, 5);
-    setWords(selected);
-    generateOptions(selected[0]);
-    setDoveMessage("Feed the lion the correct word!");
-  }, []);
+  const startGame = () => {
+    setScore(0);
+    setTimeLeft(60);
+    setLevel(1);
+    setGameState('playing');
+    nextRound(1);
+    setDoveMessage("Feed the lion the correct Tigrinya word!");
+  };
 
-  const generateOptions = React.useCallback((correctWord: any) => {
-    if (!correctWord) return;
+  const nextRound = useCallback((currentLevel: number) => {
+    const animalWords = words.filter(w => w.category === 'Nature' || w.category === 'Food');
+    if (animalWords.length === 0) return;
+
+    let numOptions = 2;
+    if (currentLevel === 2) numOptions = 3;
+    if (currentLevel >= 3) numOptions = 4;
+
+    const target = animalWords[Math.floor(Math.random() * animalWords.length)];
+    setCurrentTarget(target);
     
-    const otherWords = wordsData.filter(w => w.id !== correctWord.id);
-    const shuffledOthers = [...otherWords].sort(() => 0.5 - Math.random());
-    const wrongOptions = shuffledOthers.slice(0, 2).map(w => w.tigrinya);
+    const opts = new Set<any>();
+    opts.add(target);
+    while (opts.size < Math.min(numOptions, animalWords.length)) {
+      const randomWord = animalWords[Math.floor(Math.random() * animalWords.length)];
+      if (randomWord) opts.add(randomWord);
+    }
     
-    const allOptions = [correctWord.tigrinya, ...wrongOptions].sort(() => 0.5 - Math.random());
-    setOptions(allOptions);
-  }, []);
+    setOptions(Array.from(opts).sort(() => Math.random() - 0.5));
+    
+    const targetLang = language || 'english';
+    const translation = target.translations[targetLang as keyof typeof target.translations];
+    voiceCoach.playDualAudio(translation, targetLang, target.audioUrl);
+  }, [language]);
 
-  const handleGameEnd = React.useCallback(async () => {
-    const duration = Math.floor((Date.now() - startTime.current) / 1000);
-    await logGameSession('lion', score, duration);
-    onBack();
-  }, [score, onBack]);
+  const handleSelect = (id: string) => {
+    if (gameState !== 'playing' || !currentTarget || isEating) return;
 
-  const handleTimeUp = React.useCallback(() => {
-    if (isEating) return;
-    setDoveMessage("Time's up! The lion is still hungry.");
-    setIsEating(true);
-    setTimeout(() => {
-      setIsEating(false);
-      if (currentWordIndex < words.length - 1) {
-        setCurrentWordIndex(prev => prev + 1);
-        generateOptions(words[currentWordIndex + 1]);
-      } else {
-        handleGameEnd();
-      }
-    }, 2000);
-  }, [isEating, setDoveMessage, currentWordIndex, words, generateOptions, handleGameEnd]);
-
-  const handleFeed = (selectedWord: string) => {
-    if (isEating) return;
-    const currentWord = words[currentWordIndex];
-    if (selectedWord === currentWord.tigrinya) {
+    if (id === currentTarget.id) {
       voiceCoach.playCorrect();
       setIsEating(true);
       setDoveCheering(true);
       setDoveMessage("Yum! The lion loved it!");
-      setScore(prev => prev + 10);
+      
+      const newScore = score + 10;
+      setScore(newScore);
+      
+      let nextLevel = level;
+      if (newScore > 0 && newScore % 50 === 0) {
+        nextLevel += 1;
+        setLevel(nextLevel);
+        setDoveMessage(`Level Up! You are now level ${nextLevel}!`);
+      }
       
       setTimeout(() => {
         setIsEating(false);
         setDoveCheering(false);
-        if (currentWordIndex < words.length - 1) {
-          setCurrentWordIndex(prev => prev + 1);
-          generateOptions(words[currentWordIndex + 1]);
-          setDoveMessage("Here comes another hungry lion!");
-        } else {
-          handleGameEnd();
-        }
+        nextRound(nextLevel);
       }, 2000);
     } else {
       voiceCoach.playIncorrect();
@@ -88,75 +85,138 @@ export function FeedLionGame({ language, onBack, setDoveMessage, setDoveCheering
     }
   };
 
-  if (!words.length) return null;
-
-  const currentWord = words[currentWordIndex];
-  const translation = language ? currentWord[language.toLowerCase()] : currentWord.english;
+  useEffect(() => {
+    if (gameState === 'playing' && timeLeft > 0) {
+      const timer = setInterval(() => setTimeLeft(t => t - 1), 1000);
+      return () => clearInterval(timer);
+    } else if (timeLeft === 0 && gameState === 'playing') {
+      setGameState('end');
+      logGameSession('lion', score, 60);
+      setDoveMessage(`Great job! You scored ${score} points!`);
+    }
+  }, [timeLeft, gameState, score]);
 
   return (
     <div className="w-full h-full p-6 pb-32 flex flex-col items-center justify-start bg-orange-50 relative overflow-hidden">
+      {/* Header */}
       <div className="w-full flex justify-between items-center z-10 mb-4 mt-2">
         <button 
-          onClick={() => {
-            voiceCoach.playClick();
-            onBack();
-          }}
-          className="bg-white text-orange-500 font-black px-6 py-3 rounded-full shadow-[0_4px_0_rgb(253,186,116)] active:translate-y-1 active:shadow-none z-10 text-sm"
+          onClick={onBack}
+          className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-lg text-orange-500 hover:scale-110 transition-transform"
         >
-          ← Back
+          <ArrowLeft size={24} />
         </button>
-
-        <div className="bg-white text-orange-600 font-black px-6 py-3 rounded-full shadow-md z-10 text-sm">
-          Score: {score}
+        
+        <div className="flex gap-4">
+          <div className="bg-white px-4 py-2 rounded-2xl shadow-md flex items-center gap-2">
+            <span className="font-bold text-orange-600">Lvl {level}</span>
+          </div>
+          <div className="bg-white px-4 py-2 rounded-2xl shadow-md flex items-center gap-2">
+            <Trophy className="text-yellow-500" size={20} />
+            <span className="font-black text-orange-600">{score}</span>
+          </div>
+          <div className="bg-white px-4 py-2 rounded-2xl shadow-md flex items-center gap-2">
+            <Timer className="text-red-500" size={20} />
+            <span className="font-black text-orange-600">{timeLeft}s</span>
+          </div>
         </div>
       </div>
 
-      <div className="w-full z-10 mb-8">
-        <GameTimer 
-          duration={10} 
-          onTimeUp={handleTimeUp} 
-          resetKey={currentWordIndex} 
-          isPaused={isEating}
-        />
-      </div>
-
-      <div className="text-center mb-8 z-10 mt-4">
-        <h2 className="text-base font-black text-gray-800 mb-4">Feed the Lion</h2>
-        <div className="bg-white px-8 py-4 rounded-full shadow-md inline-block">
-          <p className="text-base font-bold text-orange-600">{translation}</p>
-        </div>
-      </div>
-
-      <div className="flex-1 flex flex-col items-center justify-start w-full max-w-2xl z-10 relative">
-        {/* The Lion */}
-        <motion.div
-          animate={isEating ? { scale: [1, 1.2, 1], rotate: [0, -5, 5, 0] } : { y: [0, -10, 0] }}
-          transition={isEating ? { duration: 0.5, repeat: 3 } : { duration: 2, repeat: Infinity, ease: "easeInOut" }}
-          className="mt-4 drop-shadow-2xl flex items-center justify-center absolute top-0"
-          style={{ fontSize: '20vh', maxWidth: '120px', lineHeight: 1 }}
-        >
-          {isEating ? '🦁' : '🦁'}
-        </motion.div>
-
-        {/* Food Options */}
-        <div className="fixed bottom-24 right-4 flex flex-col gap-4 z-50">
-          {options.map((option, index) => (
-            <motion.button
-              key={index}
-              whileHover={{ scale: 1.05, x: -5 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => {
-                voiceCoach.playClick();
-                handleFeed(option);
-              }}
-              disabled={isEating}
-              className={`bg-yellow-400 text-yellow-900 text-sm font-black w-[56px] h-[56px] rounded-full border-2 border-white shadow-md active:translate-y-1 active:shadow-none transition-all flex items-center justify-center ${isEating ? 'opacity-50 cursor-not-allowed' : ''}`}
+      <AnimatePresence mode="wait">
+        {gameState === 'start' && (
+          <motion.div 
+            key="start"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            className="flex flex-col items-center justify-center flex-1 z-10"
+          >
+            <div className="text-6xl mb-6">🦁</div>
+            <h2 className="text-3xl font-black text-orange-600 mb-4 text-center">Feed the Lion</h2>
+            <p className="text-gray-600 font-bold mb-8 text-center max-w-xs">
+              Feed the lion the correct Tigrinya word!
+            </p>
+            <button 
+              onClick={startGame}
+              className="bg-orange-500 text-white px-12 py-4 rounded-3xl font-black text-2xl shadow-[0_8px_0_rgb(194,65,12)] active:translate-y-1 active:shadow-none transition-all"
             >
-              {option}
-            </motion.button>
-          ))}
-        </div>
-      </div>
+              START!
+            </button>
+          </motion.div>
+        )}
+
+        {gameState === 'playing' && currentTarget && (
+          <motion.div 
+            key="playing"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="flex flex-col items-center justify-center flex-1 w-full max-w-md z-10"
+          >
+            <div className="bg-white p-6 rounded-[2.5rem] shadow-xl border-4 border-orange-100 mb-8 text-center w-full">
+              <p className="text-gray-400 font-black uppercase tracking-widest mb-2">Target Word:</p>
+              <h3 className="text-4xl font-black text-orange-600">{currentTarget.translations[language || 'english']}</h3>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 w-full">
+              {options.map((item) => (
+                <motion.button
+                  key={item.id}
+                  disabled={isEating}
+                  onClick={() => handleSelect(item.id)}
+                  className="bg-white p-6 rounded-2xl shadow-lg border-4 border-transparent hover:border-orange-400 transition-all flex flex-col items-center justify-center gap-2"
+                >
+                  <span className="text-3xl font-geez font-black text-gray-800">{item.translations.tigrinya}</span>
+                </motion.button>
+              ))}
+            </div>
+
+            {/* Eating Lion Animation */}
+            <AnimatePresence>
+              {isEating && (
+                <motion.div
+                  initial={{ y: 100, opacity: 0, scale: 0.5 }}
+                  animate={{ 
+                    y: 0, 
+                    opacity: [0, 1, 1, 0],
+                    scale: [0.5, 1.5, 1.5, 0.5]
+                  }}
+                  transition={{ duration: 2, ease: "easeInOut" }}
+                  className="absolute bottom-1/4 text-6xl pointer-events-none z-50"
+                >
+                  🦁
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.div>
+        )}
+
+        {gameState === 'end' && (
+          <motion.div 
+            key="end"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="flex flex-col items-center justify-center flex-1 z-10"
+          >
+            <div className="text-6xl mb-6">🏆</div>
+            <h2 className="text-3xl font-black text-orange-600 mb-2">Time Complete!</h2>
+            <p className="text-xl font-bold text-gray-500 mb-8">You scored {score} points!</p>
+            <div className="flex gap-4">
+              <button 
+                onClick={onBack}
+                className="bg-gray-200 text-gray-600 px-8 py-4 rounded-2xl font-black shadow-[0_6px_0_rgb(209,213,219)] active:translate-y-1 active:shadow-none transition-all"
+              >
+                BACK
+              </button>
+              <button 
+                onClick={startGame}
+                className="bg-orange-500 text-white px-8 py-4 rounded-2xl font-black shadow-[0_8px_0_rgb(194,65,12)] active:translate-y-1 active:shadow-none transition-all"
+              >
+                PLAY AGAIN
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

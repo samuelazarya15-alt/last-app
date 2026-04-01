@@ -34,6 +34,7 @@ import { BodyPartsGame } from './components/BodyPartsGame';
 import { ClockTowerGame } from './components/ClockTowerGame';
 import { CoffeeCeremonyGame } from './components/CoffeeCeremonyGame';
 import { GrandparentGame } from './components/GrandparentGame';
+import { FamilyTreeGame } from './components/FamilyTreeGame';
 import { Taskbar } from './components/Taskbar';
 import { SettingsModal } from './components/SettingsModal';
 import { Home } from './components/Home';
@@ -239,6 +240,7 @@ export default function App() {
         case 'clock': return <ClockTowerGame {...commonProps} />;
         case 'coffee': return <CoffeeCeremonyGame {...commonProps} />;
         case 'grandparent': return <GrandparentGame {...commonProps} />;
+        case 'family': return <FamilyTreeGame {...commonProps} />;
         default: {
           const game = GAMES.find(g => g.id === currentGame);
           return renderPlaceholder(game?.name || 'Game');

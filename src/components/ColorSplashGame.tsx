@@ -200,7 +200,10 @@ export function ColorSplashGame({ language, onBack, setDoveMessage, setDoveCheer
 
       <div className="bg-white/90 backdrop-blur-sm p-4 rounded-2xl shadow-md border-2 border-white text-center mb-8 z-10">
         <h2 className="text-base font-black text-blue-500">
-          Find: {targetColor?.translations[language as keyof typeof targetColor.translations] || targetColor?.english}
+          <div className="flex flex-col items-center">
+            <span className="text-gray-500 text-xs uppercase tracking-widest mb-1">Find the Tigrinya word for:</span>
+            <span className="text-3xl text-blue-700 mb-1">{targetColor?.translations[language as keyof typeof targetColor.translations] || targetColor?.english}</span>
+          </div>
         </h2>
       </div>
 
@@ -216,14 +219,15 @@ export function ColorSplashGame({ language, onBack, setDoveMessage, setDoveCheer
                 whileHover={{ scale: 1.1, rotate: Math.random() * 10 - 5 }}
                 whileTap={{ scale: 0.9 }}
                 onClick={() => handleSplash(opt)}
-                className="w-[48px] h-[48px] rounded-xl shadow-xl border-2 border-white/50 flex flex-col items-center justify-center gap-2 relative overflow-hidden"
+                className="w-32 h-32 rounded-3xl shadow-xl border-4 border-white/50 flex flex-col items-center justify-center gap-2 relative overflow-hidden"
                 style={{ backgroundColor: getColorStyle(opt.english) }}
               >
                 {/* Paint drip effect */}
-                <div className="absolute top-0 left-2 w-2 h-6 bg-white/20 rounded-b-full" />
-                <div className="absolute top-0 right-4 w-1 h-4 bg-white/20 rounded-b-full" />
+                <div className="absolute top-0 left-2 w-4 h-12 bg-white/20 rounded-b-full" />
+                <div className="absolute top-0 right-4 w-2 h-8 bg-white/20 rounded-b-full" />
                 
-                <span className="text-2xl drop-shadow-md z-10">{opt.emoji}</span>
+                <span className="text-4xl drop-shadow-md z-10">{opt.emoji}</span>
+                <span className="text-xl font-geez font-bold text-white drop-shadow-md z-10">{opt.translations.tigrinya}</span>
               </motion.button>
             ))}
           </AnimatePresence>

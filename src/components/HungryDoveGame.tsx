@@ -73,7 +73,7 @@ export function HungryDoveGame({ language, onBack, setDoveMessage, setDoveCheeri
   const handleCatch = useCallback((word: any) => {
     if (gameOver || isAnimating) return;
 
-    if (word.english === targetWord?.english) {
+    if (word.id === targetWord?.id) {
       // Correct
       voiceCoach.playCorrect();
       setIsAnimating(true);
@@ -109,7 +109,7 @@ export function HungryDoveGame({ language, onBack, setDoveMessage, setDoveCheeri
   const handleMissed = useCallback((word: any) => {
     if (gameOver || isAnimating) return;
     
-    if (word.english === targetWord?.english) {
+    if (word.id === targetWord?.id) {
       setIsAnimating(true);
       voiceCoach.speak("Oh no! We missed it!", language || 'english');
       setDoveMessage("Oh no! We missed it!");
@@ -207,10 +207,10 @@ export function HungryDoveGame({ language, onBack, setDoveMessage, setDoveCheeri
                 voiceCoach.playClick();
                 handleCatch(word);
               }}
-              className="absolute w-20 h-20 bg-white rounded-full shadow-lg border-4 border-amber-100 flex items-center justify-center text-4xl z-20"
+              className="absolute w-24 h-24 bg-white rounded-full shadow-lg border-4 border-amber-100 flex items-center justify-center text-3xl font-geez font-bold text-amber-800 z-20 hover:scale-110 active:scale-125 transition-transform"
               style={{ left: `${word.x}%`, transform: 'translateX(-50%)' }}
             >
-              {word.emoji}
+              {word.translations.tigrinya}
             </motion.button>
           ))}
         </AnimatePresence>

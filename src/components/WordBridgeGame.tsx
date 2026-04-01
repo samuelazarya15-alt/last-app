@@ -175,7 +175,10 @@ export function WordBridgeGame({ language, onBack, setDoveMessage, setDoveCheeri
 
       <div className="bg-white/90 backdrop-blur-sm p-4 rounded-2xl shadow-md border-2 border-white text-center mb-4 z-10">
         <h2 className="text-3xl font-black text-cyan-600">
-          Find: {targetWord?.translations[language as keyof typeof targetWord.translations] || targetWord?.english}
+          <div className="flex flex-col items-center">
+            <span className="text-gray-500 text-xs uppercase tracking-widest mb-1">Find the Tigrinya word for:</span>
+            <span className="text-4xl text-cyan-700 mb-1">{targetWord?.translations[language as keyof typeof targetWord.translations] || targetWord?.english}</span>
+          </div>
         </h2>
       </div>
 
@@ -245,7 +248,7 @@ export function WordBridgeGame({ language, onBack, setDoveMessage, setDoveCheeri
                 className="bg-white p-4 rounded-2xl shadow-md border-4 border-cyan-100 flex items-center justify-center gap-4 hover:border-cyan-300 transition-colors"
               >
                 <span className="text-4xl">{opt.emoji}</span>
-                <span className="text-xl font-bold text-gray-700 uppercase">{opt.english}</span>
+                <span className="text-2xl font-geez font-bold text-gray-700">{opt.translations.tigrinya}</span>
               </motion.button>
             ))}
           </AnimatePresence>

@@ -1,7 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ArrowLeft, Trophy, Timer, Clock } from 'lucide-react';
+import { ArrowLeft, Trophy, Timer, Clock, Calendar, Sun, Moon, Sunrise, Sunset } from 'lucide-react';
 import { logGameSession } from '../lib/progress';
+import { words } from '../data/wordHelpers';
+import { voiceCoach } from '../lib/VoiceCoach';
 
 interface ClockTowerGameProps {
   language: string | null;
@@ -10,13 +12,15 @@ interface ClockTowerGameProps {
   setDoveCheering: (cheering: boolean) => void;
 }
 
-const TIMES = [
-  { id: '1', time: '1:00', name: { english: 'One O\'clock', dutch: 'Eén uur', norwegian: 'Klokken ett', swedish: 'Klockan ett', german: 'Ein Uhr' } },
-  { id: '3', time: '3:00', name: { english: 'Three O\'clock', dutch: 'Drie uur', norwegian: 'Klokken tre', swedish: 'Klockan tre', german: 'Drei Uhr' } },
-  { id: '6', time: '6:00', name: { english: 'Six O\'clock', dutch: 'Zes uur', norwegian: 'Klokken seks', swedish: 'Klockan sex', german: 'Sechs Uhr' } },
-  { id: '9', time: '9:00', name: { english: 'Nine O\'clock', dutch: 'Negen uur', norwegian: 'Klokken ni', swedish: 'Klockan ni', german: 'Neun Uhr' } },
-  { id: '12', time: '12:00', name: { english: 'Twelve O\'clock', dutch: 'Twaalf uur', norwegian: 'Klokken twaalf', swedish: 'Klockan tolv', german: 'Zwölf Uhr' } },
-];
+const getIconForWord = (english: string) => {
+  const lower = english.toLowerCase();
+  if (lower.includes('morning') || lower.includes('sunrise')) return <Sunrise size={48} className="text-orange-400" />;
+  if (lower.includes('afternoon') || lower.includes('day') || lower.includes('sun')) return <Sun size={48} className="text-yellow-500" />;
+  if (lower.includes('evening') || lower.includes('sunset')) return <Sunset size={48} className="text-orange-600" />;
+  if (lower.includes('night') || lower.includes('moon')) return <Moon size={48} className="text-indigo-400" />;
+  if (lower.includes('week') || lower.includes('month') || lower.includes('year') || lower.includes('day')) return <Calendar size={48} className="text-blue-500" />;
+  return <Clock size={48} className="text-stone-400" />;
+};
 
 export const ClockTowerGame: React.FC<ClockTowerGameProps> = ({
   language,
@@ -25,36 +29,68 @@ export const ClockTowerGame: React.FC<ClockTowerGameProps> = ({
   setDoveCheering
 }) => {
   const [score, setScore] = useState(0);
-  const [timeLeft, setTimeLeft] = useState(30);
+  const [timeLeft, setTimeLeft] = useState(60);
   const [gameState, setGameState] = useState<'start' | 'playing' | 'end'>('start');
-  const [currentTarget, setCurrentTarget] = useState(TIMES[0]);
-  const [options, setOptions] = useState(TIMES);
-
-  const lang = (language || 'english') as keyof typeof TIMES[0]['name'];
+  const [currentTarget, setCurrentTarget] = useState<any>(null);
+  const [options, setOptions] = useState<any[]>([]);
+  const [level, setLevel] = useState(1);
 
   const startGame = () => {
     setScore(0);
-    setTimeLeft(30);
+    setTimeLeft(60);
+    setLevel(1);
     setGameState('playing');
-    nextRound();
+    nextRound(1);
     setDoveMessage("What time is it?");
   };
 
-  const nextRound = () => {
-    const target = TIMES[Math.floor(Math.random() * TIMES.length)];
+  const nextRound = useCallback((currentLevel: number) => {
+    const timeWords = words.filter(w => w.category === 'Time');
+    if (timeWords.length === 0) return;
+
+    let numOptions = 2;
+    if (currentLevel === 2) numOptions = 4;
+    if (currentLevel >= 3) numOptions = 6;
+
+    const target = timeWords[Math.floor(Math.random() * timeWords.length)];
     setCurrentTarget(target);
-    setOptions([...TIMES].sort(() => Math.random() - 0.5));
-  };
+    
+    const opts = new Set<any>();
+    opts.add(target);
+    while (opts.size < Math.min(numOptions, timeWords.length)) {
+      const randomWord = timeWords[Math.floor(Math.random() * timeWords.length)];
+      if (randomWord) opts.add(randomWord);
+    }
+    
+    setOptions(Array.from(opts).sort(() => Math.random() - 0.5));
+    
+    const targetLang = language || 'english';
+    const translation = target.translations[targetLang as keyof typeof target.translations];
+    voiceCoach.playDualAudio(translation, targetLang, target.audioUrl);
+  }, [language]);
 
   const handleSelect = (id: string) => {
-    if (gameState !== 'playing') return;
+    if (gameState !== 'playing' || !currentTarget) return;
 
     if (id === currentTarget.id) {
-      setScore(s => s + 1);
+      const newScore = score + 10;
+      setScore(newScore);
       setDoveCheering(true);
-      setTimeout(() => setDoveCheering(false), 1000);
-      nextRound();
+      voiceCoach.playCorrect();
+      
+      let nextLevel = level;
+      if (newScore > 0 && newScore % 50 === 0) {
+        nextLevel += 1;
+        setLevel(nextLevel);
+        setDoveMessage(`Level Up! You are now level ${nextLevel}!`);
+      }
+      
+      setTimeout(() => {
+        setDoveCheering(false);
+        nextRound(nextLevel);
+      }, 1000);
     } else {
+      voiceCoach.playIncorrect();
       setDoveMessage("Try again!");
     }
   };
@@ -65,15 +101,15 @@ export const ClockTowerGame: React.FC<ClockTowerGameProps> = ({
       return () => clearInterval(timer);
     } else if (timeLeft === 0 && gameState === 'playing') {
       setGameState('end');
-      logGameSession('clock', score, 30);
-      setDoveMessage(`Great job! You told the time ${score} times!`);
+      logGameSession('clock', score, 60);
+      setDoveMessage(`Great job! You scored ${score} points!`);
     }
   }, [timeLeft, gameState, score]);
 
   return (
     <div className="w-full h-full bg-stone-50 flex flex-col items-center p-4 relative overflow-hidden">
       {/* Header */}
-      <div className="w-full flex justify-between items-center z-10 mb-8">
+      <div className="w-full flex justify-between items-center z-10 mb-4">
         <button 
           onClick={onBack}
           className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-lg text-stone-500 hover:scale-110 transition-transform"
@@ -82,6 +118,9 @@ export const ClockTowerGame: React.FC<ClockTowerGameProps> = ({
         </button>
         
         <div className="flex gap-4">
+          <div className="bg-white px-4 py-2 rounded-2xl shadow-md flex items-center gap-2">
+            <span className="font-bold text-blue-600">Lvl {level}</span>
+          </div>
           <div className="bg-white px-4 py-2 rounded-2xl shadow-md flex items-center gap-2">
             <Trophy className="text-yellow-500" size={20} />
             <span className="font-black text-stone-600">{score}</span>
@@ -105,7 +144,7 @@ export const ClockTowerGame: React.FC<ClockTowerGameProps> = ({
             <div className="text-6xl mb-6">🕰️</div>
             <h2 className="text-3xl font-black text-stone-600 mb-4 text-center">Clock Tower</h2>
             <p className="text-gray-500 font-bold mb-8 text-center max-w-xs">
-              Learn to tell the time on the big clock tower!
+              Learn time and days in Tigrinya!
             </p>
             <button 
               onClick={startGame}
@@ -116,7 +155,7 @@ export const ClockTowerGame: React.FC<ClockTowerGameProps> = ({
           </motion.div>
         )}
 
-        {gameState === 'playing' && (
+        {gameState === 'playing' && currentTarget && (
           <motion.div 
             key="playing"
             initial={{ opacity: 0 }}
@@ -124,8 +163,8 @@ export const ClockTowerGame: React.FC<ClockTowerGameProps> = ({
             className="flex flex-col items-center justify-center flex-1 w-full max-w-md"
           >
             <div className="bg-white p-6 rounded-[2.5rem] shadow-xl border-4 border-stone-100 mb-12 text-center w-full">
-              <p className="text-gray-400 font-black uppercase tracking-widest mb-2">Find the time:</p>
-              <h3 className="text-4xl font-black text-stone-600">{currentTarget.name[lang]}</h3>
+              <p className="text-gray-400 font-black uppercase tracking-widest mb-2">Find the Tigrinya word for:</p>
+              <h3 className="text-4xl font-black text-stone-600">{currentTarget.translations[language || 'english']}</h3>
             </div>
 
             <div className="grid grid-cols-2 gap-6 w-full overflow-y-auto max-h-[50vh] p-2">
@@ -137,8 +176,8 @@ export const ClockTowerGame: React.FC<ClockTowerGameProps> = ({
                   onClick={() => handleSelect(time.id)}
                   className="bg-white p-6 rounded-[2rem] shadow-lg border-4 border-transparent hover:border-stone-400 transition-all flex flex-col items-center justify-center gap-2"
                 >
-                  <Clock size={48} className="text-stone-400" />
-                  <span className="text-2xl font-black text-stone-600">{time.time}</span>
+                  {getIconForWord(time.english)}
+                  <span className="text-2xl font-geez font-black text-stone-800 text-center">{time.translations.tigrinya}</span>
                 </motion.button>
               ))}
             </div>
@@ -154,7 +193,7 @@ export const ClockTowerGame: React.FC<ClockTowerGameProps> = ({
           >
             <div className="text-6xl mb-6">🏆</div>
             <h2 className="text-3xl font-black text-stone-600 mb-2">Time Master!</h2>
-            <p className="text-xl font-bold text-gray-500 mb-8">You matched {score} times!</p>
+            <p className="text-xl font-bold text-gray-500 mb-8">You scored {score} points!</p>
             <div className="flex gap-4">
               <button 
                 onClick={onBack}
