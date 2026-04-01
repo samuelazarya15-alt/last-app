@@ -48,8 +48,8 @@ export function GeezGravityGame({ language, onBack, setDoveMessage, setDoveCheer
   const [level, setLevel] = useState(1);
   
   const gameContainerRef = useRef<HTMLDivElement>(null);
-  const requestRef = useRef<number>();
-  const lastTimeRef = useRef<number>();
+  const requestRef = useRef<number>(0);
+  const lastTimeRef = useRef<number>(0);
 
   const playSound = (type: 'match' | 'fail' | 'gameover') => {
     if (type === 'match') {
@@ -152,7 +152,7 @@ export function GeezGravityGame({ language, onBack, setDoveMessage, setDoveCheer
     
     try {
       await logGameSession('geezgravity', score, 60);
-      const history = await getGameHistory('geezgravity');
+      const history = await getGameHistory(5);
       setHighScores(history.slice(0, 5)); // Top 5
     } catch (e) {
       console.error("Failed to save progress", e);

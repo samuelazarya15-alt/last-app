@@ -162,7 +162,7 @@ export function MemoryMatchGame({ language, onBack, setDoveMessage, setDoveCheer
             <span className="text-sky-500">🏆</span>
             <span className="font-bold text-sky-700">{score}</span>
           </div>
-          <GameTimer duration={60} onTimeUp={handleTimeUp} isPaused={isAnimating} />
+          <GameTimer duration={60} onTimeUp={handleTimeUp} isPaused={isAnimating} resetKey={level} />
         </div>
       </div>
 

@@ -20,6 +20,8 @@ export interface GameSession {
   score: number;
   duration: number;
   timestamp?: any;
+  game_type?: string; // Mapped for UI
+  created_at?: string; // Mapped for UI
 }
 
 export interface UserStats {
@@ -31,6 +33,7 @@ export interface UserStats {
   streak: number;
   total_xp: number;
   role: 'admin' | 'user';
+  coins?: number; // Mapped for UI
   createdAt?: any;
   updatedAt?: any;
 }

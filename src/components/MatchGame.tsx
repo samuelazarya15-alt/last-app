@@ -139,7 +139,7 @@ export function MatchGame({ language, onBack, setDoveMessage, setDoveCheering }:
             <span className="text-purple-500">🏆</span>
             <span className="font-bold text-purple-700">{score}</span>
           </div>
-          <GameTimer duration={60} onTimeUp={handleTimeUp} isPaused={isGameOver} />
+          <GameTimer duration={60} onTimeUp={handleTimeUp} isPaused={isGameOver} resetKey={level} />
         </div>
       </div>
 

@@ -123,7 +123,7 @@ export function TraceWordGame({ language, onBack, setDoveMessage, setDoveCheerin
             <span className="text-yellow-500">🏆</span>
             <span className="font-bold text-yellow-700">{score}</span>
           </div>
-          <GameTimer duration={60} onTimeUp={handleTimeUp} isPaused={isAnimating} />
+          <GameTimer duration={60} onTimeUp={handleTimeUp} isPaused={isAnimating} resetKey={level} />
         </div>
       </div>
 

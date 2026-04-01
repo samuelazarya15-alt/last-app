@@ -44,9 +44,9 @@ export function Trophy() {
 
   // Prepare chart data
   const chartData = history.map(session => ({
-    name: session.game_type.charAt(0).toUpperCase() + session.game_type.slice(1),
+    name: (session.game_type || 'Game').charAt(0).toUpperCase() + (session.game_type || 'Game').slice(1),
     score: session.score,
-    date: new Date(session.created_at!).toLocaleDateString()
+    date: new Date(session.created_at || new Date()).toLocaleDateString()
   })).reverse();
 
   const COLORS = ['#4ade80', '#facc15', '#fb923c', '#60a5fa', '#a855f7'];
