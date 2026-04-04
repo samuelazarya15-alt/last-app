@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback, Suspense } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { PerspectiveCamera, OrbitControls, Text, Float, Environment, ContactShadows, useHelper } from '@react-three/drei';
+import { PerspectiveCamera, OrbitControls, Text, Float, ContactShadows, useHelper, Sky } from '@react-three/drei';
 import * as THREE from 'three';
 import { motion, AnimatePresence } from 'motion/react';
 import confetti from 'canvas-confetti';
@@ -472,13 +472,14 @@ export function StadiumGame({ language, onBack, setDoveMessage, setDoveCheering 
       {/* 3D Canvas */}
       <div className="absolute inset-0 z-0">
         <Canvas shadows camera={{ position: [0, 8, 10], fov: 50 }}>
-          <ambientLight intensity={0.7} />
+          <ambientLight intensity={0.8} />
           <directionalLight 
             position={[10, 20, 10]} 
-            intensity={1.5} 
+            intensity={2} 
             castShadow 
             shadow-mapSize={[1024, 1024]}
           />
+          <pointLight position={[-10, 10, -10]} intensity={1} color="#ffffff" />
           
           <OrbitControls 
             enableZoom={false} 
@@ -493,9 +494,9 @@ export function StadiumGame({ language, onBack, setDoveMessage, setDoveCheering 
           <Ball position={ballPos} type={ballType} />
           <Player position={[0, 0, -10]} isKicking={isAnimating} targetX={targetX} isGoal={isGoal} />
           <ContactShadows opacity={0.4} scale={40} blur={2} far={10} />
+          <Sky sunPosition={[100, 20, 100]} />
 
           <Suspense fallback={null}>
-            <Environment preset="park" />
             <Scoreboard score={score} time={timeLeft} />
           </Suspense>
         </Canvas>
