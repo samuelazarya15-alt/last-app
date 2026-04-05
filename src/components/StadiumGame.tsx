@@ -301,19 +301,59 @@ function Humanoid({
         <meshStandardMaterial color={kitColor} />
       </mesh>
       {/* Head */}
-      <mesh ref={headRef} position={[0, 2.4, 0]} castShadow>
-        <sphereGeometry args={[0.28, 16, 16]} />
-        <meshStandardMaterial color={skinColor} />
+      <group ref={headRef} position={[0, 2.4, 0]}>
+        <mesh castShadow>
+          <sphereGeometry args={[0.28, 16, 16]} />
+          <meshStandardMaterial color={skinColor} />
+        </mesh>
+        
+        {/* Hair */}
+        <mesh position={[0, 0.15, -0.05]}>
+          <sphereGeometry args={[0.29, 16, 16, 0, Math.PI * 2, 0, Math.PI / 2]} />
+          <meshStandardMaterial color="#3b2219" />
+        </mesh>
+
         {/* Eyes */}
         <mesh position={[-0.1, 0.05, 0.22]}>
-          <sphereGeometry args={[0.03, 8, 8]} />
-          <meshStandardMaterial color="black" />
+          <sphereGeometry args={[0.04, 8, 8]} />
+          <meshStandardMaterial color="white" />
+          <mesh position={[0, 0, 0.02]}>
+            <sphereGeometry args={[0.02, 8, 8]} />
+            <meshStandardMaterial color="black" />
+          </mesh>
         </mesh>
         <mesh position={[0.1, 0.05, 0.22]}>
-          <sphereGeometry args={[0.03, 8, 8]} />
-          <meshStandardMaterial color="black" />
+          <sphereGeometry args={[0.04, 8, 8]} />
+          <meshStandardMaterial color="white" />
+          <mesh position={[0, 0, 0.02]}>
+            <sphereGeometry args={[0.02, 8, 8]} />
+            <meshStandardMaterial color="black" />
+          </mesh>
         </mesh>
-      </mesh>
+
+        {/* Nose */}
+        <mesh position={[0, -0.02, 0.26]} rotation={[Math.PI / 2, 0, 0]}>
+          <coneGeometry args={[0.03, 0.08, 8]} />
+          <meshStandardMaterial color={skinColor} />
+        </mesh>
+
+        {/* Mouth */}
+        <mesh position={[0, -0.12, 0.22]}>
+          <boxGeometry args={[0.08, 0.02, 0.02]} />
+          <meshStandardMaterial color="#e11d48" />
+        </mesh>
+
+        {/* Ears */}
+        <mesh position={[-0.28, 0, 0]}>
+          <sphereGeometry args={[0.05, 8, 8]} />
+          <meshStandardMaterial color={skinColor} />
+        </mesh>
+        <mesh position={[0.28, 0, 0]}>
+          <sphereGeometry args={[0.05, 8, 8]} />
+          <meshStandardMaterial color={skinColor} />
+        </mesh>
+      </group>
+
       {/* Legs - Shorts & Socks */}
       <group position={[-0.22, 0.5, 0]} ref={leftLegRef}>
         <mesh position={[0, 0.4, 0]} castShadow>
@@ -326,7 +366,7 @@ function Humanoid({
         </mesh>
         <mesh position={[0, -0.45, 0.1]} castShadow>
           <boxGeometry args={[0.2, 0.15, 0.4]} />
-          <meshStandardMaterial color="black" />
+          <meshStandardMaterial color="#111827" />
         </mesh>
       </group>
       <group position={[0.22, 0.5, 0]} ref={rightLegRef}>
@@ -340,18 +380,33 @@ function Humanoid({
         </mesh>
         <mesh position={[0, -0.45, 0.1]} castShadow>
           <boxGeometry args={[0.2, 0.15, 0.4]} />
-          <meshStandardMaterial color="black" />
+          <meshStandardMaterial color="#111827" />
         </mesh>
       </group>
+
       {/* Arms */}
-      <mesh ref={leftArmRef} position={[-0.5, 1.6, 0]} castShadow>
-        <cylinderGeometry args={[0.08, 0.08, 1]} />
-        <meshStandardMaterial color={skinColor} />
-      </mesh>
-      <mesh ref={rightArmRef} position={[0.5, 1.6, 0]} castShadow>
-        <cylinderGeometry args={[0.08, 0.08, 1]} />
-        <meshStandardMaterial color={skinColor} />
-      </mesh>
+      <group ref={leftArmRef} position={[-0.5, 1.6, 0]}>
+        <mesh position={[0, -0.2, 0]} castShadow>
+          <cylinderGeometry args={[0.08, 0.08, 0.8]} />
+          <meshStandardMaterial color={skinColor} />
+        </mesh>
+        {/* Hand */}
+        <mesh position={[0, -0.6, 0]} castShadow>
+          <sphereGeometry args={[0.09, 8, 8]} />
+          <meshStandardMaterial color={skinColor} />
+        </mesh>
+      </group>
+      <group ref={rightArmRef} position={[0.5, 1.6, 0]}>
+        <mesh position={[0, -0.2, 0]} castShadow>
+          <cylinderGeometry args={[0.08, 0.08, 0.8]} />
+          <meshStandardMaterial color={skinColor} />
+        </mesh>
+        {/* Hand */}
+        <mesh position={[0, -0.6, 0]} castShadow>
+          <sphereGeometry args={[0.09, 8, 8]} />
+          <meshStandardMaterial color={skinColor} />
+        </mesh>
+      </group>
     </group>
   );
 }
