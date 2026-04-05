@@ -435,6 +435,7 @@ export function StadiumGame({ language, onBack, setDoveMessage, setDoveCheering 
   const [gameState, setGameState] = useState<'start' | 'playing' | 'end'>('start');
   const [currentTarget, setCurrentTarget] = useState<any>(null);
   const [options, setOptions] = useState<any[]>([]);
+  const [selectedOption, setSelectedOption] = useState<{id: string, index: number} | null>(null);
   const [level, setLevel] = useState(1);
   const [isAnimating, setIsAnimating] = useState(false);
   const [ballType, setBallType] = useState<BallType>('standard');
@@ -481,6 +482,7 @@ export function StadiumGame({ language, onBack, setDoveMessage, setDoveCheering 
     setBallPos([0, 0.4, -15]);
     setIsAnimating(false);
     setIsGoal(null);
+    setSelectedOption(null);
 
     const targetLang = language || 'english';
     const translation = target.translations[targetLang as keyof typeof target.translations];
@@ -489,7 +491,14 @@ export function StadiumGame({ language, onBack, setDoveMessage, setDoveCheering 
 
   const handleSelect = (id: string, index: number) => {
     if (gameState !== 'playing' || !currentTarget || isAnimating) return;
+    setSelectedOption({ id, index });
+    voiceCoach.playSfx('pop');
+  };
 
+  const handleKick = () => {
+    if (!selectedOption || isAnimating) return;
+
+    const { id, index } = selectedOption;
     setIsAnimating(true);
     setIsGoal(null);
     voiceCoach.playSfx('kick');
@@ -497,17 +506,13 @@ export function StadiumGame({ language, onBack, setDoveMessage, setDoveCheering 
     const isCorrect = id === currentTarget.id;
     
     // Calculate target X
-    // If correct, target the center area of the goal
-    // If incorrect, target outside the goal posts
     let x = (index - (options.length - 1) / 2) * 3;
     
     if (!isCorrect) {
-      // Force a miss by pushing X further out if it would have been a goal
       if (Math.abs(x) < 4) {
         x = x < 0 ? -6 : 6;
       }
     } else {
-      // Ensure it's a goal by keeping X within bounds
       if (Math.abs(x) >= 4) {
         x = x < 0 ? -2 : 2;
       }
@@ -519,7 +524,7 @@ export function StadiumGame({ language, onBack, setDoveMessage, setDoveCheering 
     let startTime = performance.now();
     const animateBall = (time: number) => {
       const elapsed = time - startTime;
-      const progress = Math.min(elapsed / 600, 1); // Faster ball speed (800 -> 600)
+      const progress = Math.min(elapsed / 600, 1);
       
       const newZ = -15 - progress * 15;
       const newX = progress * x;
@@ -536,7 +541,6 @@ export function StadiumGame({ language, onBack, setDoveMessage, setDoveCheering 
       }
     };
     
-    // Delay ball animation to match player run
     setTimeout(() => requestAnimationFrame(animateBall), 250);
   };
 
@@ -613,8 +617,51 @@ export function StadiumGame({ language, onBack, setDoveMessage, setDoveCheering 
 
   return (
     <div className="flex flex-col items-center justify-start w-full h-full relative overflow-hidden bg-sky-400">
+      {/* Header - Truly out of the stadium area */}
+      <div className="w-full bg-white/95 backdrop-blur-md z-20 shadow-lg border-b-4 border-green-500/30">
+        <div className="w-full flex justify-between items-center px-4 py-2">
+          <button 
+            onClick={onBack}
+            className="w-10 h-10 bg-green-50 rounded-full flex items-center justify-center shadow-md text-green-600 hover:scale-110 active:scale-95 transition-all border-2 border-green-100"
+          >
+            <ArrowLeft size={20} />
+          </button>
+          
+          <div className="flex gap-2">
+            <div className="bg-blue-50 px-3 py-1 rounded-xl shadow-sm flex items-center gap-1 border border-blue-100">
+              <span className="font-black text-blue-700 text-xs tracking-tight">LVL {level}</span>
+            </div>
+            <div className="bg-yellow-50 px-3 py-1 rounded-xl shadow-sm flex items-center gap-1 border border-yellow-100">
+              <Trophy className="text-yellow-600" size={14} />
+              <span className="font-black text-yellow-700 text-xs tracking-tight">{score}</span>
+            </div>
+            <div className="bg-red-50 px-3 py-1 rounded-xl shadow-sm flex items-center gap-1 border border-red-100">
+              <Timer className={timeLeft <= 10 ? "text-red-500 animate-pulse" : "text-red-400"} size={14} />
+              <span className={`font-black text-xs tracking-tight ${timeLeft <= 10 ? "text-red-600" : "text-gray-700"}`}>{timeLeft}s</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Eye-catching Question Box - Now part of the solid header */}
+        <AnimatePresence>
+          {gameState === 'playing' && currentTarget && (
+            <motion.div
+              initial={{ y: -20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: -20, opacity: 0 }}
+              className="w-full bg-gradient-to-r from-green-500 to-emerald-600 py-3 text-center shadow-inner"
+            >
+              <p className="text-white/80 font-black text-[10px] uppercase tracking-[0.3em] leading-none mb-1">Target Word</p>
+              <h3 className="text-4xl font-black text-white leading-tight drop-shadow-lg tracking-tight">
+                {currentTarget.translations[language || 'english']}
+              </h3>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
       {/* 3D Canvas */}
-      <div className="absolute inset-0 z-0">
+      <div className="absolute inset-0 z-0 pt-32">
         <Canvas shadows camera={{ position: [0, 8, 10], fov: 50 }}>
           <ambientLight intensity={0.8} />
           <directionalLight 
@@ -648,48 +695,7 @@ export function StadiumGame({ language, onBack, setDoveMessage, setDoveCheering 
       </div>
 
       {/* Header */}
-      <div className="w-full flex flex-col items-center z-10 p-4 gap-2">
-        <div className="w-full flex justify-between items-center">
-          <button 
-            onClick={onBack}
-            className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-lg text-green-500 hover:scale-110 transition-transform"
-          >
-            <ArrowLeft size={24} />
-          </button>
-          
-          <div className="flex gap-1.5">
-            <div className="bg-white/95 backdrop-blur-md px-2.5 py-1 rounded-lg shadow-xl flex items-center gap-1 border border-blue-200/50">
-              <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
-              <span className="font-black text-blue-700 text-[10px] tracking-tight">LVL {level}</span>
-            </div>
-            <div className="bg-white/95 backdrop-blur-md px-2.5 py-1 rounded-lg shadow-xl flex items-center gap-1 border border-yellow-200/50">
-              <Trophy className="text-yellow-500" size={12} />
-              <span className="font-black text-yellow-700 text-[10px] tracking-tight">{score}</span>
-            </div>
-            <div className="bg-white/95 backdrop-blur-md px-2.5 py-1 rounded-lg shadow-xl flex items-center gap-1 border border-red-200/50">
-              <Timer className={timeLeft <= 10 ? "text-red-500 animate-pulse" : "text-red-400"} size={12} />
-              <span className={`font-black text-[10px] tracking-tight ${timeLeft <= 10 ? "text-red-600" : "text-gray-700"}`}>{timeLeft}s</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Eye-catching Question Box at the Top */}
-        <AnimatePresence>
-          {gameState === 'playing' && currentTarget && (
-            <motion.div
-              initial={{ y: -50, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: -50, opacity: 0 }}
-              className="bg-gradient-to-r from-green-500 to-emerald-600 px-6 py-2 rounded-2xl shadow-[0_8px_0_rgb(5,150,105)] border-2 border-white/30 text-center pointer-events-auto"
-            >
-              <p className="text-white/80 font-black text-[10px] uppercase tracking-widest leading-none mb-1">Target Word</p>
-              <h3 className="text-2xl font-black text-white leading-tight drop-shadow-md">
-                {currentTarget.translations[language || 'english']}
-              </h3>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
+      {/* (Moved to top of return) */}
 
       <AnimatePresence mode="wait">
         {gameState === 'start' && (
@@ -719,9 +725,22 @@ export function StadiumGame({ language, onBack, setDoveMessage, setDoveCheering 
             key="playing"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="flex flex-col items-center justify-end flex-1 w-full max-w-md z-10 pb-8 pointer-events-none"
+            className="flex flex-col items-center justify-end flex-1 w-full max-w-md z-10 pb-6 pointer-events-none"
           >
-            {/* Options - Smaller and at the very bottom */}
+            {/* Kick Ball Button */}
+            <motion.button
+              initial={{ scale: 0 }}
+              animate={{ scale: selectedOption ? 1 : 0 }}
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              onClick={handleKick}
+              disabled={isAnimating}
+              className="bg-orange-500 text-white px-12 py-4 rounded-full font-black text-2xl shadow-[0_8px_0_rgb(194,65,12)] border-2 border-white mb-6 pointer-events-auto active:translate-y-2 active:shadow-none transition-all"
+            >
+              KICK BALL! ⚽
+            </motion.button>
+
+            {/* Options */}
             <div className="grid grid-cols-2 gap-3 w-full px-6 pointer-events-auto">
               {options.map((item, index) => (
                 <motion.button
@@ -730,9 +749,15 @@ export function StadiumGame({ language, onBack, setDoveMessage, setDoveCheering 
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => handleSelect(item.id, index)}
-                  className="bg-white/90 backdrop-blur-sm py-4 px-4 rounded-2xl shadow-xl border-4 border-transparent hover:border-green-400 transition-all flex flex-col items-center justify-center"
+                  className={`backdrop-blur-sm py-4 px-4 rounded-2xl shadow-xl border-4 transition-all flex flex-col items-center justify-center ${
+                    selectedOption?.id === item.id 
+                      ? 'bg-green-500 border-white text-white' 
+                      : 'bg-white/90 border-transparent text-gray-800 hover:border-green-400'
+                  }`}
                 >
-                  <span className="text-xl font-geez font-black text-gray-800">{item.translations.tigrinya}</span>
+                  <span className={`text-xl font-geez font-black ${selectedOption?.id === item.id ? 'text-white' : 'text-gray-800'}`}>
+                    {item.translations.tigrinya}
+                  </span>
                 </motion.button>
               ))}
             </div>
