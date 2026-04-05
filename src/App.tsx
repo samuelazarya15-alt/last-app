@@ -14,14 +14,13 @@ import { MatchGame } from './components/MatchGame';
 import { MemoryMatchGame } from './components/MemoryMatchGame';
 import { FruitMarketGame } from './components/FruitMarketGame';
 import { HungryDoveGame } from './components/HungryDoveGame';
-import { SoundPopGame } from './components/SoundPopGame';
 import { HeritageTrainGame } from './components/HeritageTrainGame';
 import { ColorSplashGame } from './components/ColorSplashGame';
 import { AnimalOrchestraGame } from './components/AnimalOrchestraGame';
 import { SpaceRocketGame } from './components/SpaceRocketGame';
 import { HideAndSeekGame } from './components/HideAndSeekGame';
 import { WordBridgeGame } from './components/WordBridgeGame';
-import { DressUpGame } from './components/DressUpGame';
+import { QueenDressUpGame } from './components/QueenDressUpGame';
 import { GeezGravityGame } from './components/GeezGravityGame';
 import { TransportRaceGame } from './components/TransportRaceGame';
 import { VegetableGardenGame } from './components/VegetableGardenGame';
@@ -68,7 +67,6 @@ const GAMES = [
   { id: 'dove', name: 'Dove Flight', icon: '🕊️', color: 'blue', world: 'action' },
   { id: 'rocket', name: 'Space Rocket', icon: '🚀', color: 'indigo', world: 'action' },
   { id: 'transport', name: 'Transport Race', icon: '🏎️', color: 'red', world: 'action' },
-  { id: 'soundpop', name: 'Sound Pop', icon: '🫧', color: 'cyan', world: 'action' },
   { id: 'train', name: 'Heritage Train', icon: '🚂', color: 'stone', world: 'action' },
   
   // Nature Valley
@@ -97,7 +95,7 @@ const GAMES = [
   // Heritage House
   { id: 'grandparent', name: 'Grandparent Mode', icon: '👵', color: 'amber', world: 'heritage' },
   { id: 'coffee', name: 'Coffee Ceremony', icon: '☕', color: 'stone', world: 'heritage' },
-  { id: 'dressup', name: 'Dress-Up', icon: '👗', color: 'fuchsia', world: 'heritage' },
+  { id: 'queendressup', name: "Queen's Wardrobe", icon: '👑', color: 'fuchsia', world: 'heritage' },
   { id: 'family', name: 'Family Tree', icon: '🌳', color: 'green', world: 'heritage' },
 ];
 
@@ -220,14 +218,13 @@ export default function App() {
         case 'memory': return <MemoryMatchGame {...commonProps} />;
         case 'fruit': return <FruitMarketGame {...commonProps} />;
         case 'hungry': return <HungryDoveGame {...commonProps} />;
-        case 'soundpop': return <SoundPopGame {...commonProps} />;
         case 'train': return <HeritageTrainGame {...commonProps} />;
         case 'color': return <ColorSplashGame {...commonProps} />;
         case 'animal': return <AnimalOrchestraGame {...commonProps} />;
         case 'rocket': return <SpaceRocketGame {...commonProps} />;
         case 'hide': return <HideAndSeekGame {...commonProps} />;
         case 'bridge': return <WordBridgeGame {...commonProps} />;
-        case 'dressup': return <DressUpGame {...commonProps} />;
+        case 'queendressup': return <QueenDressUpGame {...commonProps} />;
         case 'geezgravity': return <GeezGravityGame {...commonProps} />;
         case 'transport': return <TransportRaceGame {...commonProps} />;
         case 'garden': return <VegetableGardenGame {...commonProps} />;

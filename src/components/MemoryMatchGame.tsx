@@ -23,16 +23,18 @@ export function MemoryMatchGame({ language, onBack, setDoveMessage, setDoveCheer
   const [isAnimating, setIsAnimating] = useState(false);
   const startTime = useRef(Date.now());
   const [level, setLevel] = useState(1);
-
-  const pairsCount = 4; // 8 cards total
+  const [pairsCount, setPairsCount] = useState(4);
 
   useEffect(() => {
-    startNewLevel();
+    // Increase difficulty every level
+    const newPairsCount = Math.min(4 + Math.floor((level - 1) / 2) * 2, 12);
+    setPairsCount(newPairsCount);
+    startNewLevel(newPairsCount);
   }, [level]);
 
-  const startNewLevel = React.useCallback(() => {
+  const startNewLevel = React.useCallback((count: number) => {
     setDoveMessage("Find the matching pairs!");
-    const shuffledWords = [...wordHelpersWords].sort(() => Math.random() - 0.5).slice(0, pairsCount);
+    const shuffledWords = [...wordHelpersWords].sort(() => Math.random() - 0.5).slice(0, count);
     
     const newCards: Card[] = [];
     let idCounter = 0;
@@ -144,59 +146,81 @@ export function MemoryMatchGame({ language, onBack, setDoveMessage, setDoveCheer
   };
 
   return (
-    <div className="w-full h-full bg-sky-50 flex flex-col items-center p-4 relative overflow-hidden">
+    <div className="w-full h-full bg-gradient-to-b from-sky-100 to-white flex flex-col items-center p-4 relative overflow-hidden">
+      {/* Background elements */}
+      <div className="absolute inset-0 pointer-events-none opacity-20">
+        <div className="absolute top-10 left-10 text-6xl animate-bounce" style={{ animationDuration: '4s' }}>☁️</div>
+        <div className="absolute top-20 right-20 text-8xl animate-bounce" style={{ animationDuration: '6s' }}>☁️</div>
+        <div className="absolute bottom-20 left-1/4 text-7xl animate-bounce" style={{ animationDuration: '5s' }}>☁️</div>
+      </div>
+
       {/* Header */}
-      <div className="w-full flex justify-between items-center z-10 mb-4">
+      <div className="w-full flex justify-between items-center z-10 mb-6">
         <button 
           onClick={onBack}
-          className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-lg text-sky-500 hover:scale-110 transition-transform"
+          className="w-12 h-12 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg text-sky-500 hover:scale-110 transition-transform border-2 border-sky-100"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
         </button>
         
-        <div className="flex gap-4">
-          <div className="bg-white px-4 py-2 rounded-2xl shadow-md flex items-center gap-2">
-            <span className="font-bold text-sky-500">Lvl {level}</span>
+        <div className="flex gap-3">
+          <div className="bg-white/90 backdrop-blur-sm px-4 py-2 rounded-2xl shadow-md flex items-center gap-2 border-2 border-sky-100">
+            <span className="font-black text-sky-600">LVL {level}</span>
           </div>
-          <div className="bg-white px-4 py-2 rounded-2xl shadow-md flex items-center gap-2">
-            <span className="text-sky-500">🏆</span>
-            <span className="font-bold text-sky-700">{score}</span>
+          <div className="bg-white/90 backdrop-blur-sm px-4 py-2 rounded-2xl shadow-md flex items-center gap-2 border-2 border-yellow-100">
+            <span className="text-lg">🏆</span>
+            <span className="font-black text-sky-700">{score}</span>
           </div>
           <GameTimer duration={60} onTimeUp={handleTimeUp} isPaused={isAnimating} resetKey={level} />
         </div>
       </div>
 
       {/* Main Game Area */}
-      <div className="flex-1 w-full max-w-2xl flex flex-col items-center justify-center gap-8 relative z-10">
-        <div className="grid grid-cols-4 gap-4 w-full px-4">
+      <div className="flex-1 w-full max-w-4xl flex flex-col items-center justify-center relative z-10">
+        <div className={`grid ${pairsCount <= 4 ? 'grid-cols-2 sm:grid-cols-4' : pairsCount <= 6 ? 'grid-cols-3 sm:grid-cols-4' : 'grid-cols-4 sm:grid-cols-6'} gap-3 sm:gap-4 w-full px-2`}>
           <AnimatePresence>
             {cards.map((card, index) => (
               <motion.div
                 key={`${card.id}-${index}`}
-                initial={{ scale: 0, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
+                initial={{ scale: 0, opacity: 0, rotateY: 180 }}
+                animate={{ scale: 1, opacity: 1, rotateY: 0 }}
                 exit={{ scale: 0, opacity: 0 }}
-                transition={{ delay: index * 0.05 }}
+                transition={{ delay: index * 0.03, type: 'spring', stiffness: 200 }}
                 className="aspect-square relative perspective-1000"
               >
                 <motion.button
                   whileHover={{ scale: card.isFlipped || card.isMatched ? 1 : 1.05 }}
                   whileTap={{ scale: card.isFlipped || card.isMatched ? 1 : 0.95 }}
                   onClick={() => handleCardClick(index)}
-                  className={`w-full h-full rounded-2xl shadow-lg transition-all duration-500 transform-style-3d ${
+                  className={`w-full h-full rounded-2xl shadow-xl transition-all duration-500 transform-style-3d relative ${
                     card.isFlipped || card.isMatched ? 'rotate-y-180' : ''
                   }`}
                 >
                   {/* Front of card (hidden) */}
-                  <div className="absolute inset-0 bg-white rounded-2xl flex items-center justify-center backface-hidden border-4 border-sky-100">
-                    <span className="text-4xl">☁️</span>
+                  <div className="absolute inset-0 bg-white rounded-2xl flex flex-col items-center justify-center backface-hidden border-4 border-sky-100 group overflow-hidden">
+                    <div className="absolute inset-0 bg-sky-50 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <span className="text-4xl sm:text-5xl relative z-10 drop-shadow-sm">❓</span>
+                    <div className="absolute bottom-2 w-1/2 h-1 bg-sky-100 rounded-full" />
                   </div>
                   
                   {/* Back of card (revealed) */}
-                  <div className="absolute inset-0 bg-sky-100 rounded-2xl flex items-center justify-center backface-hidden rotate-y-180 border-4 border-sky-300">
-                    <span className={`font-bold ${card.type === 'native' ? 'font-geez text-3xl' : 'text-xl'} text-sky-800 text-center px-2`}>
-                      {card.text}
-                    </span>
+                  <div className={`absolute inset-0 rounded-2xl flex items-center justify-center backface-hidden rotate-y-180 border-4 ${
+                    card.isMatched ? 'bg-green-50 border-green-300' : 'bg-sky-100 border-sky-300'
+                  }`}>
+                    <div className="flex flex-col items-center gap-1 p-2">
+                      <span className={`font-black leading-tight ${card.type === 'native' ? 'font-geez text-2xl sm:text-3xl' : 'text-lg sm:text-xl'} text-sky-900 text-center`}>
+                        {card.text}
+                      </span>
+                      {card.isMatched && (
+                        <motion.div 
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          className="text-green-500 text-xl"
+                        >
+                          ✨
+                        </motion.div>
+                      )}
+                    </div>
                   </div>
                 </motion.button>
               </motion.div>

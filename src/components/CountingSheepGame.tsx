@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ArrowLeft, Trophy, Timer } from 'lucide-react';
+import { ArrowLeft, Trophy, Timer, Moon, Stars, Cloud } from 'lucide-react';
 import { logGameSession } from '../lib/progress';
 import { words } from '../data/wordHelpers';
 import { voiceCoach } from '../lib/VoiceCoach';
+import confetti from 'canvas-confetti';
 
 interface CountingSheepGameProps {
   language: string | null;
@@ -24,6 +25,7 @@ export const CountingSheepGame: React.FC<CountingSheepGameProps> = ({
   const [sheepCount, setSheepCount] = useState(0);
   const [options, setOptions] = useState<any[]>([]);
   const [level, setLevel] = useState(1);
+  const [isSuccess, setIsSuccess] = useState(false);
 
   const startGame = () => {
     setScore(0);
@@ -31,7 +33,7 @@ export const CountingSheepGame: React.FC<CountingSheepGameProps> = ({
     setLevel(1);
     setGameState('playing');
     nextRound(1);
-    setDoveMessage("How many sheep can you see?");
+    setDoveMessage("Count the jumping sheep!");
   };
 
   const nextRound = useCallback((currentLevel: number) => {
@@ -44,6 +46,7 @@ export const CountingSheepGame: React.FC<CountingSheepGameProps> = ({
 
     const count = Math.floor(Math.random() * maxSheep) + 1;
     setSheepCount(count);
+    setIsSuccess(false);
     
     const targetWord = numberWords.find(w => w.english === count.toString() || 
       (count === 1 && w.english === 'One') ||
@@ -63,7 +66,7 @@ export const CountingSheepGame: React.FC<CountingSheepGameProps> = ({
     const opts = new Set<any>();
     opts.add(targetWord);
     
-    const availableWords = numberWords.filter(w => parseInt(w.id) >= 62 && parseInt(w.id) <= 62 + maxSheep - 1);
+    const availableWords = numberWords.filter(w => parseInt(w.id) >= 62 && parseInt(w.id) <= 62 + 10);
     
     while (opts.size < 3) {
       const randomWord = availableWords[Math.floor(Math.random() * availableWords.length)];
@@ -78,7 +81,7 @@ export const CountingSheepGame: React.FC<CountingSheepGameProps> = ({
   }, [language]);
 
   const handleSelect = (selectedWord: any) => {
-    if (gameState !== 'playing') return;
+    if (gameState !== 'playing' || isSuccess) return;
 
     const isCorrect = 
       (sheepCount === 1 && selectedWord.english === 'One') ||
@@ -97,18 +100,24 @@ export const CountingSheepGame: React.FC<CountingSheepGameProps> = ({
       setScore(newScore);
       setDoveCheering(true);
       voiceCoach.playCorrect();
+      setIsSuccess(true);
       
       let nextLevel = level;
       if (newScore > 0 && newScore % 50 === 0) {
         nextLevel += 1;
         setLevel(nextLevel);
         setDoveMessage(`Level Up! You are now level ${nextLevel}!`);
+        confetti({
+          particleCount: 100,
+          spread: 70,
+          origin: { y: 0.6 }
+        });
       }
       
       setTimeout(() => {
         setDoveCheering(false);
         nextRound(nextLevel);
-      }, 1000);
+      }, 2000);
     } else {
       voiceCoach.playIncorrect();
       setDoveMessage("Try counting again!");
@@ -127,27 +136,50 @@ export const CountingSheepGame: React.FC<CountingSheepGameProps> = ({
   }, [timeLeft, gameState, score]);
 
   return (
-    <div className="w-full h-full bg-slate-50 flex flex-col items-center p-4 relative overflow-hidden">
+    <div className="w-full h-full bg-[#0f172a] flex flex-col items-center p-4 relative overflow-hidden font-sans">
+      {/* Night Sky Background */}
+      <div className="absolute inset-0 pointer-events-none">
+        {[...Array(40)].map((_, i) => (
+          <motion.div
+            key={i}
+            animate={{ opacity: [0.2, 0.8, 0.2] }}
+            transition={{ duration: 2 + Math.random() * 2, repeat: Infinity }}
+            className="absolute w-1 h-1 bg-white rounded-full"
+            style={{
+              top: `${Math.random() * 60}%`,
+              left: `${Math.random() * 100}%`,
+            }}
+          />
+        ))}
+        <motion.div 
+          animate={{ y: [0, 10, 0] }}
+          transition={{ duration: 4, repeat: Infinity }}
+          className="absolute top-10 right-10 text-yellow-100/20"
+        >
+          <Moon size={80} fill="currentColor" />
+        </motion.div>
+      </div>
+
       {/* Header */}
-      <div className="w-full flex justify-between items-center z-10 mb-4">
+      <div className="w-full flex justify-between items-center z-20 mb-4">
         <button 
           onClick={onBack}
-          className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-lg text-slate-500 hover:scale-110 transition-transform"
+          className="w-12 h-12 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center shadow-lg text-white hover:bg-white/20 transition-all border border-white/20"
         >
           <ArrowLeft size={24} />
         </button>
         
-        <div className="flex gap-4">
-          <div className="bg-white px-4 py-2 rounded-2xl shadow-md flex items-center gap-2">
-            <span className="font-bold text-blue-600">Lvl {level}</span>
+        <div className="flex gap-2">
+          <div className="bg-white/10 backdrop-blur-md px-4 py-2 rounded-2xl shadow-md flex items-center gap-2 border border-blue-500/30">
+            <span className="font-black text-blue-400">LVL {level}</span>
           </div>
-          <div className="bg-white px-4 py-2 rounded-2xl shadow-md flex items-center gap-2">
+          <div className="bg-white/10 backdrop-blur-md px-4 py-2 rounded-2xl shadow-md flex items-center gap-2 border border-yellow-500/30">
             <Trophy className="text-yellow-500" size={20} />
-            <span className="font-black text-slate-600">{score}</span>
+            <span className="font-black text-yellow-400">{score}</span>
           </div>
-          <div className="bg-white px-4 py-2 rounded-2xl shadow-md flex items-center gap-2">
-            <Timer className="text-red-500" size={20} />
-            <span className="font-black text-slate-600">{timeLeft}s</span>
+          <div className="bg-white/10 backdrop-blur-md px-4 py-2 rounded-2xl shadow-md flex items-center gap-2 border border-red-500/30">
+            <Timer className={timeLeft <= 10 ? "text-red-500 animate-pulse" : "text-red-400"} size={20} />
+            <span className={`font-black ${timeLeft <= 10 ? "text-red-500" : "text-white"}`}>{timeLeft}s</span>
           </div>
         </div>
       </div>
@@ -159,16 +191,22 @@ export const CountingSheepGame: React.FC<CountingSheepGameProps> = ({
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.9 }}
-            className="flex flex-col items-center justify-center flex-1"
+            className="flex flex-col items-center justify-center flex-1 z-20"
           >
-            <div className="text-6xl mb-6">🐑</div>
-            <h2 className="text-3xl font-black text-slate-600 mb-4 text-center">Counting Sheep</h2>
-            <p className="text-gray-500 font-bold mb-8 text-center max-w-xs">
-              Count the fluffy sheep and pick the right Tigrinya number!
+            <motion.div 
+              animate={{ y: [0, -20, 0] }}
+              transition={{ duration: 2, repeat: Infinity }}
+              className="text-8xl mb-6 drop-shadow-2xl"
+            >
+              🐑
+            </motion.div>
+            <h2 className="text-5xl font-black text-white mb-4 text-center">Counting Sheep</h2>
+            <p className="text-blue-200 font-bold mb-8 text-center max-w-xs text-lg">
+              Count the fluffy sheep jumping over the fence!
             </p>
             <button 
               onClick={startGame}
-              className="bg-slate-500 text-white px-12 py-4 rounded-3xl font-black text-2xl shadow-[0_8px_0_rgb(71,85,105)] active:translate-y-1 active:shadow-none transition-all"
+              className="bg-indigo-600 text-white px-16 py-5 rounded-full font-black text-3xl shadow-[0_10px_0_rgb(49,46,129)] active:translate-y-[10px] active:shadow-none transition-all border-2 border-indigo-400"
             >
               START!
             </button>
@@ -180,35 +218,74 @@ export const CountingSheepGame: React.FC<CountingSheepGameProps> = ({
             key="playing"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="flex flex-col items-center justify-start flex-1 w-full max-w-md"
+            className="flex flex-col items-center justify-between flex-1 w-full max-w-2xl py-8 z-20"
           >
-            <div className="flex flex-wrap justify-center gap-4 mb-8">
-              {Array.from({ length: sheepCount }).map((_, i) => (
-                <motion.div
-                  key={i}
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  transition={{ delay: i * 0.1 }}
-                  className="text-6xl"
-                >
-                  🐑
-                </motion.div>
-              ))}
+            {/* Jumping Area */}
+            <div className="w-full h-64 relative flex items-end justify-center mb-12">
+              {/* Fence */}
+              <div className="absolute bottom-0 w-full h-12 bg-amber-900/40 border-t-4 border-amber-900/60 rounded-t-lg z-10 flex items-center justify-center gap-4">
+                {[...Array(10)].map((_, i) => (
+                  <div key={i} className="w-2 h-full bg-amber-900/40" />
+                ))}
+              </div>
+
+              {/* Sheep */}
+              <div className="flex flex-wrap justify-center gap-2 z-20">
+                {Array.from({ length: sheepCount }).map((_, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ x: -200, y: 0, opacity: 0 }}
+                    animate={{ 
+                      x: (i - (sheepCount-1)/2) * 60,
+                      y: [0, -100, 0],
+                      opacity: 1
+                    }}
+                    transition={{ 
+                      delay: i * 0.3,
+                      y: { duration: 0.6, repeat: Infinity, repeatDelay: 2 },
+                      x: { duration: 0.5 }
+                    }}
+                    className="text-6xl drop-shadow-lg"
+                  >
+                    🐑
+                  </motion.div>
+                ))}
+              </div>
+
+              {/* Grass */}
+              <div className="absolute -bottom-4 w-full h-8 bg-emerald-900/30 blur-md" />
             </div>
 
-            <div className="flex flex-col gap-4 w-full justify-center">
-              {options.map((word, idx) => (
-                <motion.button
-                  key={`${word.id}-${idx}`}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => handleSelect(word)}
-                  className="w-full bg-white rounded-3xl shadow-md border-4 border-slate-100 flex flex-col items-center justify-center py-4 px-6 hover:border-slate-400 transition-all"
-                >
-                  <span className="text-3xl font-geez font-black text-slate-700">{word.translations.tigrinya}</span>
-                  <span className="text-sm font-bold text-slate-400">({word.translations[language || 'english']})</span>
-                </motion.button>
-              ))}
+            {/* Options Area */}
+            <div className="w-full">
+              <p className="text-center text-blue-300 font-black uppercase tracking-widest text-sm mb-6">How many sheep?</p>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full">
+                {options.map((word, idx) => (
+                  <motion.button
+                    key={`${word.id}-${idx}`}
+                    whileHover={{ scale: 1.05, backgroundColor: 'rgba(255,255,255,0.15)' }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => handleSelect(word)}
+                    className={`bg-white/10 backdrop-blur-md p-6 rounded-[2.5rem] border-2 transition-all flex flex-col items-center justify-center gap-1 ${
+                      isSuccess && (
+                        (sheepCount === 1 && word.english === 'One') ||
+                        (sheepCount === 2 && word.english === 'Two') ||
+                        (sheepCount === 3 && word.english === 'Three') ||
+                        (sheepCount === 4 && word.english === 'Four') ||
+                        (sheepCount === 5 && word.english === 'Five') ||
+                        (sheepCount === 6 && word.english === 'Six') ||
+                        (sheepCount === 7 && word.english === 'Seven') ||
+                        (sheepCount === 8 && word.english === 'Eight') ||
+                        (sheepCount === 9 && word.english === 'Nine') ||
+                        (sheepCount === 10 && word.english === 'Ten')
+                      ) ? 'border-green-500 bg-green-500/20' : 'border-white/10 hover:border-white/30'
+                    }`}
+                  >
+                    <span className="text-3xl font-geez font-black text-white">{word.translations.tigrinya}</span>
+                    <span className="text-sm font-bold text-blue-300">({word.translations[language || 'english']})</span>
+                  </motion.button>
+                ))}
+              </div>
             </div>
           </motion.div>
         )}
@@ -218,21 +295,21 @@ export const CountingSheepGame: React.FC<CountingSheepGameProps> = ({
             key="end"
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="flex flex-col items-center justify-center flex-1"
+            className="flex flex-col items-center justify-center flex-1 z-20"
           >
-            <div className="text-6xl mb-6">🏆</div>
-            <h2 className="text-3xl font-black text-slate-600 mb-2">Counting Finished!</h2>
-            <p className="text-xl font-bold text-gray-500 mb-8">You scored {score} points!</p>
+            <div className="text-8xl mb-6">🌟</div>
+            <h2 className="text-5xl font-black text-white mb-2">Sweet Dreams!</h2>
+            <p className="text-2xl font-bold text-blue-200 mb-8">You counted {score} points!</p>
             <div className="flex gap-4">
               <button 
                 onClick={onBack}
-                className="bg-gray-200 text-gray-600 px-8 py-4 rounded-2xl font-black shadow-[0_6px_0_rgb(209,213,219)] active:translate-y-1 active:shadow-none transition-all"
+                className="bg-white/10 text-white px-10 py-5 rounded-3xl font-black text-xl border border-white/20 hover:bg-white/20 transition-all"
               >
                 BACK
               </button>
               <button 
                 onClick={startGame}
-                className="bg-slate-500 text-white px-8 py-4 rounded-2xl font-black shadow-[0_8px_0_rgb(71,85,105)] active:translate-y-1 active:shadow-none transition-all"
+                className="bg-indigo-600 text-white px-10 py-5 rounded-3xl font-black text-xl shadow-[0_8px_0_rgb(49,46,129)] active:translate-y-1 active:shadow-none transition-all border-2 border-indigo-400"
               >
                 PLAY AGAIN
               </button>
@@ -243,3 +320,4 @@ export const CountingSheepGame: React.FC<CountingSheepGameProps> = ({
     </div>
   );
 };
+

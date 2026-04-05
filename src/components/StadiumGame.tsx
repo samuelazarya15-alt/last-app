@@ -14,26 +14,69 @@ import { voiceCoach } from '../lib/VoiceCoach';
 function Pitch() {
   return (
     <group rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.01, 0]}>
-      {/* Grass */}
-      <mesh receiveShadow>
-        <planeGeometry args={[40, 60]} />
-        <meshStandardMaterial color="#2d5a27" />
-      </mesh>
-      {/* Lines */}
+      {/* Grass with stripes */}
+      {[...Array(12)].map((_, i) => (
+        <mesh key={i} position={[0, -30 + i * 5 + 2.5, 0]} receiveShadow>
+          <planeGeometry args={[40, 5]} />
+          <meshStandardMaterial color={i % 2 === 0 ? "#2d5a27" : "#346b2d"} />
+        </mesh>
+      ))}
+      
+      {/* Outer Boundary */}
       <mesh position={[0, 0, 0.01]}>
         <planeGeometry args={[38, 58]} />
         <meshStandardMaterial color="white" wireframe />
       </mesh>
+
+      {/* Center Line */}
+      <mesh position={[0, 0, 0.02]}>
+        <planeGeometry args={[38, 0.1]} />
+        <meshStandardMaterial color="white" />
+      </mesh>
+
       {/* Center Circle */}
       <mesh position={[0, 0, 0.02]}>
         <ringGeometry args={[4.9, 5, 64]} />
         <meshStandardMaterial color="white" />
       </mesh>
-      {/* Penalty Area */}
-      <mesh position={[0, 20, 0.02]}>
-        <planeGeometry args={[16, 10]} />
-        <meshStandardMaterial color="white" wireframe />
-      </mesh>
+
+      {/* Penalty Area (Bottom) */}
+      <group position={[0, -24, 0.02]}>
+        <mesh>
+          <planeGeometry args={[16, 10]} />
+          <meshStandardMaterial color="white" wireframe />
+        </mesh>
+        <mesh position={[0, 5, 0]} rotation={[0, 0, Math.PI]}>
+          <ringGeometry args={[3.9, 4, 64, 1, 0, Math.PI]} />
+          <meshStandardMaterial color="white" />
+        </mesh>
+      </group>
+
+      {/* Penalty Area (Top) */}
+      <group position={[0, 24, 0.02]}>
+        <mesh>
+          <planeGeometry args={[16, 10]} />
+          <meshStandardMaterial color="white" wireframe />
+        </mesh>
+        <mesh position={[0, -5, 0]}>
+          <ringGeometry args={[3.9, 4, 64, 1, 0, Math.PI]} />
+          <meshStandardMaterial color="white" />
+        </mesh>
+      </group>
+
+      {/* Corner Flags */}
+      {[[-19, -29], [19, -29], [-19, 29], [19, 29]].map(([x, y], i) => (
+        <group key={i} position={[x, y, 0]} rotation={[Math.PI / 2, 0, 0]}>
+          <mesh position={[0, 1, 0]}>
+            <cylinderGeometry args={[0.05, 0.05, 2]} />
+            <meshStandardMaterial color="yellow" />
+          </mesh>
+          <mesh position={[0.25, 1.8, 0]}>
+            <planeGeometry args={[0.5, 0.4]} />
+            <meshStandardMaterial color="red" side={THREE.DoubleSide} />
+          </mesh>
+        </group>
+      ))}
     </group>
   );
 }
@@ -43,21 +86,30 @@ function Goal() {
     <group position={[0, 0, -25]}>
       {/* Posts */}
       <mesh position={[-4, 2, 0]} castShadow>
-        <boxGeometry args={[0.2, 4, 0.2]} />
+        <cylinderGeometry args={[0.1, 0.1, 4]} />
         <meshStandardMaterial color="white" />
       </mesh>
       <mesh position={[4, 2, 0]} castShadow>
-        <boxGeometry args={[0.2, 4, 0.2]} />
+        <cylinderGeometry args={[0.1, 0.1, 4]} />
         <meshStandardMaterial color="white" />
       </mesh>
-      <mesh position={[0, 4, 0]} castShadow>
-        <boxGeometry args={[8.2, 0.2, 0.2]} />
+      <mesh position={[0, 4, 0]} rotation={[0, 0, Math.PI / 2]} castShadow>
+        <cylinderGeometry args={[0.1, 0.1, 8.2]} />
         <meshStandardMaterial color="white" />
       </mesh>
-      {/* Net */}
-      <mesh position={[0, 2, -1]} receiveShadow>
-        <boxGeometry args={[8, 4, 2]} />
-        <meshStandardMaterial color="white" wireframe opacity={0.3} transparent />
+      {/* Net - More detailed */}
+      <mesh position={[0, 2, -1.5]} receiveShadow>
+        <boxGeometry args={[8, 4, 3]} />
+        <meshStandardMaterial color="white" wireframe opacity={0.1} transparent />
+      </mesh>
+      {/* Back supports */}
+      <mesh position={[-4, 0, -3]} rotation={[Math.PI / 2, 0, 0]}>
+        <cylinderGeometry args={[0.05, 0.05, 6]} />
+        <meshStandardMaterial color="white" />
+      </mesh>
+      <mesh position={[4, 0, -3]} rotation={[Math.PI / 2, 0, 0]}>
+        <cylinderGeometry args={[0.05, 0.05, 6]} />
+        <meshStandardMaterial color="white" />
       </mesh>
     </group>
   );
@@ -117,7 +169,23 @@ function Scoreboard({ score, time }: { score: number, time: number }) {
   );
 }
 
-function Player({ position, isKicking, targetX, isGoal }: { position: [number, number, number], isKicking: boolean, targetX: number, isGoal: boolean | null }) {
+function Humanoid({ 
+  position, 
+  animState, 
+  kitColor = "#ef4444", 
+  shortColor = "#1e3a8a", 
+  skinColor = "#fde68a",
+  targetX = 0,
+  isKicking = false
+}: { 
+  position: [number, number, number], 
+  animState: string, 
+  kitColor?: string, 
+  shortColor?: string, 
+  skinColor?: string,
+  targetX?: number,
+  isKicking?: boolean
+}) {
   const groupRef = useRef<THREE.Group>(null);
   const torsoRef = useRef<THREE.Mesh>(null);
   const headRef = useRef<THREE.Mesh>(null);
@@ -125,32 +193,13 @@ function Player({ position, isKicking, targetX, isGoal }: { position: [number, n
   const rightLegRef = useRef<THREE.Mesh>(null);
   const leftArmRef = useRef<THREE.Mesh>(null);
   const rightArmRef = useRef<THREE.Mesh>(null);
-  const [animState, setAnimState] = useState<'idle' | 'run' | 'kick' | 'celebrate' | 'miss'>('idle');
-
-  useEffect(() => {
-    if (isKicking) {
-      setAnimState('run');
-      setTimeout(() => setAnimState('kick'), 400);
-    }
-  }, [isKicking]);
-
-  useEffect(() => {
-    if (isGoal === true) {
-      setAnimState('celebrate');
-      setTimeout(() => setAnimState('idle'), 3000);
-    } else if (isGoal === false) {
-      setAnimState('miss');
-      setTimeout(() => setAnimState('idle'), 2000);
-    }
-  }, [isGoal]);
 
   useFrame((state, delta) => {
     if (!groupRef.current) return;
 
     const t = state.clock.elapsedTime;
-    const lerpSpeed = 0.15;
+    const lerpSpeed = 0.3; // Faster response
 
-    // Target values for limbs
     let targetPos = [...position];
     let targetRotLegL = 0;
     let targetRotLegR = 0;
@@ -184,55 +233,54 @@ function Player({ position, isKicking, targetX, isGoal }: { position: [number, n
       targetRotArmR = -Math.PI / 4;
       targetRotTorso = -0.2;
     } else if (animState === 'celebrate') {
-      // Fist pump and jump
       const jump = Math.abs(Math.sin(t * 12)) * 1.2;
       targetPos[1] = jump;
-      
-      // Right arm fist pump
       targetRotArmR = -Math.PI / 1.2;
       targetArmRZ = -0.5;
-      
-      // Left arm waving
       targetRotArmL = Math.sin(t * 15) * 0.5;
       targetArmLZ = 1.2;
-      
       targetRotLegL = -0.2;
       targetRotLegR = -0.2;
     } else if (animState === 'miss') {
-      // Disappointed pose: head down and shaking, shoulders slumped
       targetHeadY = 2.1;
-      targetRotTorso = 0.4; // Lean forward more
-      
-      // Shaking head "no"
+      targetRotTorso = 0.4;
       const headShake = Math.sin(t * 8) * 0.3;
       if (headRef.current) headRef.current.rotation.y = headShake;
-      
       targetRotArmL = 0.3;
       targetRotArmR = -0.3;
       targetArmLZ = 0.2;
       targetArmRZ = -0.2;
-      
-      // Return to original X/Z slowly
       groupRef.current.position.z = THREE.MathUtils.lerp(groupRef.current.position.z, position[2], 0.05);
       groupRef.current.position.x = THREE.MathUtils.lerp(groupRef.current.position.x, position[0], 0.05);
+    } else if (animState === 'dive-left') {
+      targetPos[0] = -3;
+      targetPos[1] = 0.5;
+      groupRef.current.rotation.z = Math.PI / 2.5;
+      targetRotArmL = Math.PI / 2;
+      targetRotArmR = Math.PI / 2;
+    } else if (animState === 'dive-right') {
+      targetPos[0] = 3;
+      targetPos[1] = 0.5;
+      groupRef.current.rotation.z = -Math.PI / 2.5;
+      targetRotArmL = -Math.PI / 2;
+      targetRotArmR = -Math.PI / 2;
     } else {
-      // Idle breathing
       targetPos[1] = Math.sin(t * 2) * 0.05;
       targetRotArmL = Math.sin(t * 2) * 0.1;
       targetRotArmR = -Math.sin(t * 2) * 0.1;
       targetHeadY = 2.4 + Math.sin(t * 2) * 0.02;
-      
-      // Return to original X/Z
       groupRef.current.position.z = THREE.MathUtils.lerp(groupRef.current.position.z, position[2], 0.1);
       groupRef.current.position.x = THREE.MathUtils.lerp(groupRef.current.position.x, position[0], 0.1);
+      groupRef.current.rotation.z = THREE.MathUtils.lerp(groupRef.current.rotation.z, 0, 0.1);
     }
 
-    // Apply lerped values
     groupRef.current.position.y = THREE.MathUtils.lerp(groupRef.current.position.y, targetPos[1], lerpSpeed);
-    
+    if (animState !== 'run' && animState !== 'miss') {
+      groupRef.current.position.x = THREE.MathUtils.lerp(groupRef.current.position.x, targetPos[0], lerpSpeed);
+    }
+
     if (leftLegRef.current) leftLegRef.current.rotation.x = THREE.MathUtils.lerp(leftLegRef.current.rotation.x, targetRotLegL, lerpSpeed);
     if (rightLegRef.current) rightLegRef.current.rotation.x = THREE.MathUtils.lerp(rightLegRef.current.rotation.x, targetRotLegR, lerpSpeed);
-    
     if (leftArmRef.current) {
       leftArmRef.current.rotation.x = THREE.MathUtils.lerp(leftArmRef.current.rotation.x, targetRotArmL, lerpSpeed);
       leftArmRef.current.rotation.z = THREE.MathUtils.lerp(leftArmRef.current.rotation.z, targetArmLZ, lerpSpeed);
@@ -241,42 +289,139 @@ function Player({ position, isKicking, targetX, isGoal }: { position: [number, n
       rightArmRef.current.rotation.x = THREE.MathUtils.lerp(rightArmRef.current.rotation.x, targetRotArmR, lerpSpeed);
       rightArmRef.current.rotation.z = THREE.MathUtils.lerp(rightArmRef.current.rotation.z, targetArmRZ, lerpSpeed);
     }
-    
     if (torsoRef.current) torsoRef.current.rotation.y = THREE.MathUtils.lerp(torsoRef.current.rotation.y, targetRotTorso, lerpSpeed);
     if (headRef.current) headRef.current.position.y = THREE.MathUtils.lerp(headRef.current.position.y, targetHeadY, lerpSpeed);
   });
 
   return (
     <group ref={groupRef} position={position}>
-      {/* Torso */}
+      {/* Torso - Jersey */}
       <mesh ref={torsoRef} position={[0, 1.5, 0]} castShadow>
-        <boxGeometry args={[0.8, 1.2, 0.4]} />
-        <meshStandardMaterial color="#ef4444" />
+        <capsuleGeometry args={[0.35, 0.8, 4, 8]} />
+        <meshStandardMaterial color={kitColor} />
       </mesh>
       {/* Head */}
       <mesh ref={headRef} position={[0, 2.4, 0]} castShadow>
-        <sphereGeometry args={[0.3, 16, 16]} />
-        <meshStandardMaterial color="#fde68a" />
+        <sphereGeometry args={[0.28, 16, 16]} />
+        <meshStandardMaterial color={skinColor} />
+        {/* Eyes */}
+        <mesh position={[-0.1, 0.05, 0.22]}>
+          <sphereGeometry args={[0.03, 8, 8]} />
+          <meshStandardMaterial color="black" />
+        </mesh>
+        <mesh position={[0.1, 0.05, 0.22]}>
+          <sphereGeometry args={[0.03, 8, 8]} />
+          <meshStandardMaterial color="black" />
+        </mesh>
       </mesh>
-      {/* Legs */}
-      <mesh ref={leftLegRef} position={[-0.25, 0.5, 0]} castShadow>
-        <boxGeometry args={[0.3, 1, 0.3]} />
-        <meshStandardMaterial color="#1e3a8a" />
-      </mesh>
-      <mesh ref={rightLegRef} position={[0.25, 0.5, 0]} castShadow>
-        <boxGeometry args={[0.3, 1, 0.3]} />
-        <meshStandardMaterial color="#1e3a8a" />
-      </mesh>
+      {/* Legs - Shorts & Socks */}
+      <group position={[-0.22, 0.5, 0]} ref={leftLegRef}>
+        <mesh position={[0, 0.4, 0]} castShadow>
+          <cylinderGeometry args={[0.15, 0.12, 0.5]} />
+          <meshStandardMaterial color={shortColor} />
+        </mesh>
+        <mesh position={[0, -0.1, 0]} castShadow>
+          <cylinderGeometry args={[0.12, 0.1, 0.6]} />
+          <meshStandardMaterial color="white" />
+        </mesh>
+        <mesh position={[0, -0.45, 0.1]} castShadow>
+          <boxGeometry args={[0.2, 0.15, 0.4]} />
+          <meshStandardMaterial color="black" />
+        </mesh>
+      </group>
+      <group position={[0.22, 0.5, 0]} ref={rightLegRef}>
+        <mesh position={[0, 0.4, 0]} castShadow>
+          <cylinderGeometry args={[0.15, 0.12, 0.5]} />
+          <meshStandardMaterial color={shortColor} />
+        </mesh>
+        <mesh position={[0, -0.1, 0]} castShadow>
+          <cylinderGeometry args={[0.12, 0.1, 0.6]} />
+          <meshStandardMaterial color="white" />
+        </mesh>
+        <mesh position={[0, -0.45, 0.1]} castShadow>
+          <boxGeometry args={[0.2, 0.15, 0.4]} />
+          <meshStandardMaterial color="black" />
+        </mesh>
+      </group>
       {/* Arms */}
-      <mesh ref={leftArmRef} position={[-0.55, 1.5, 0]} castShadow>
-        <boxGeometry args={[0.2, 1, 0.2]} />
-        <meshStandardMaterial color="#fde68a" />
+      <mesh ref={leftArmRef} position={[-0.5, 1.6, 0]} castShadow>
+        <cylinderGeometry args={[0.08, 0.08, 1]} />
+        <meshStandardMaterial color={skinColor} />
       </mesh>
-      <mesh ref={rightArmRef} position={[0.55, 1.5, 0]} castShadow>
-        <boxGeometry args={[0.2, 1, 0.2]} />
-        <meshStandardMaterial color="#fde68a" />
+      <mesh ref={rightArmRef} position={[0.5, 1.6, 0]} castShadow>
+        <cylinderGeometry args={[0.08, 0.08, 1]} />
+        <meshStandardMaterial color={skinColor} />
       </mesh>
     </group>
+  );
+}
+
+function Player({ position, isKicking, targetX, isGoal }: { position: [number, number, number], isKicking: boolean, targetX: number, isGoal: boolean | null }) {
+  const [animState, setAnimState] = useState<'idle' | 'run' | 'kick' | 'celebrate' | 'miss'>('idle');
+
+  useEffect(() => {
+    if (isKicking) {
+      setAnimState('run');
+      setTimeout(() => setAnimState('kick'), 250); // Faster run-to-kick
+    }
+  }, [isKicking]);
+
+  useEffect(() => {
+    if (isGoal === true) {
+      setAnimState('celebrate');
+      setTimeout(() => setAnimState('idle'), 3000);
+    } else if (isGoal === false) {
+      setAnimState('miss');
+      setTimeout(() => setAnimState('idle'), 2000);
+    }
+  }, [isGoal]);
+
+  return (
+    <Humanoid 
+      position={position} 
+      animState={animState} 
+      targetX={targetX} 
+      isKicking={isKicking}
+      kitColor="#ef4444" // Red Kit
+      shortColor="#1e3a8a" // Blue Shorts
+    />
+  );
+}
+
+function Goalkeeper({ ballPos, isKicking, targetX }: { ballPos: [number, number, number], isKicking: boolean, targetX: number }) {
+  const [animState, setAnimState] = useState<'idle' | 'dive-left' | 'dive-right'>('idle');
+  const [currentX, setCurrentX] = useState(0);
+  const pos: [number, number, number] = [currentX, 0, -24.5];
+
+  useEffect(() => {
+    if (isKicking) {
+      // Goalkeeper reacts faster
+      const reactionDelay = 150 + Math.random() * 100;
+      
+      setTimeout(() => {
+        const moveTarget = targetX * 0.9;
+        setCurrentX(moveTarget);
+
+        if (Math.abs(targetX) > 1.2) {
+          setAnimState(targetX > 0 ? 'dive-right' : 'dive-left');
+        }
+      }, reactionDelay);
+
+      setTimeout(() => {
+        setAnimState('idle');
+        setCurrentX(0);
+      }, 2000);
+    }
+  }, [isKicking, targetX]);
+
+  return (
+    <Humanoid 
+      position={pos} 
+      animState={animState} 
+      kitColor="#fbbf24" // Yellow GK Kit
+      shortColor="#1f2937" // Dark Shorts
+      skinColor="#fde68a"
+    />
   );
 }
 
@@ -374,12 +519,11 @@ export function StadiumGame({ language, onBack, setDoveMessage, setDoveCheering 
     let startTime = performance.now();
     const animateBall = (time: number) => {
       const elapsed = time - startTime;
-      const progress = Math.min(elapsed / 800, 1); // Slower animation for better visibility
+      const progress = Math.min(elapsed / 600, 1); // Faster ball speed (800 -> 600)
       
-      const newZ = -15 - progress * 15; // Fly further back
+      const newZ = -15 - progress * 15;
       const newX = progress * x;
       
-      // If it's a miss, maybe make it fly higher or lower
       const heightMultiplier = isCorrect ? 2 : 3; 
       const newY = 0.4 + Math.sin(progress * Math.PI) * heightMultiplier;
       
@@ -393,7 +537,7 @@ export function StadiumGame({ language, onBack, setDoveMessage, setDoveCheering 
     };
     
     // Delay ball animation to match player run
-    setTimeout(() => requestAnimationFrame(animateBall), 400);
+    setTimeout(() => requestAnimationFrame(animateBall), 250);
   };
 
   const checkResult = (id: string) => {
@@ -493,6 +637,7 @@ export function StadiumGame({ language, onBack, setDoveMessage, setDoveCheering 
           <Goal />
           <Ball position={ballPos} type={ballType} />
           <Player position={[0, 0, -10]} isKicking={isAnimating} targetX={targetX} isGoal={isGoal} />
+          <Goalkeeper ballPos={ballPos} isKicking={isAnimating} targetX={targetX} />
           <ContactShadows opacity={0.4} scale={40} blur={2} far={10} />
           <Sky sunPosition={[100, 20, 100]} />
 
@@ -503,27 +648,47 @@ export function StadiumGame({ language, onBack, setDoveMessage, setDoveCheering 
       </div>
 
       {/* Header */}
-      <div className="w-full flex justify-between items-center z-10 p-4">
-        <button 
-          onClick={onBack}
-          className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-lg text-green-500 hover:scale-110 transition-transform"
-        >
-          <ArrowLeft size={24} />
-        </button>
-        
-        <div className="flex gap-4">
-          <div className="bg-white px-4 py-2 rounded-2xl shadow-md flex items-center gap-2">
-            <span className="font-bold text-blue-600">Lvl {level}</span>
-          </div>
-          <div className="bg-white px-4 py-2 rounded-2xl shadow-md flex items-center gap-2">
-            <Trophy className="text-yellow-500" size={20} />
-            <span className="font-black text-green-600">{score}</span>
-          </div>
-          <div className="bg-white px-4 py-2 rounded-2xl shadow-md flex items-center gap-2">
-            <Timer className="text-red-500" size={20} />
-            <span className="font-black text-green-600">{timeLeft}s</span>
+      <div className="w-full flex flex-col items-center z-10 p-4 gap-2">
+        <div className="w-full flex justify-between items-center">
+          <button 
+            onClick={onBack}
+            className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-lg text-green-500 hover:scale-110 transition-transform"
+          >
+            <ArrowLeft size={24} />
+          </button>
+          
+          <div className="flex gap-1.5">
+            <div className="bg-white/95 backdrop-blur-md px-2.5 py-1 rounded-lg shadow-xl flex items-center gap-1 border border-blue-200/50">
+              <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
+              <span className="font-black text-blue-700 text-[10px] tracking-tight">LVL {level}</span>
+            </div>
+            <div className="bg-white/95 backdrop-blur-md px-2.5 py-1 rounded-lg shadow-xl flex items-center gap-1 border border-yellow-200/50">
+              <Trophy className="text-yellow-500" size={12} />
+              <span className="font-black text-yellow-700 text-[10px] tracking-tight">{score}</span>
+            </div>
+            <div className="bg-white/95 backdrop-blur-md px-2.5 py-1 rounded-lg shadow-xl flex items-center gap-1 border border-red-200/50">
+              <Timer className={timeLeft <= 10 ? "text-red-500 animate-pulse" : "text-red-400"} size={12} />
+              <span className={`font-black text-[10px] tracking-tight ${timeLeft <= 10 ? "text-red-600" : "text-gray-700"}`}>{timeLeft}s</span>
+            </div>
           </div>
         </div>
+
+        {/* Eye-catching Question Box at the Top */}
+        <AnimatePresence>
+          {gameState === 'playing' && currentTarget && (
+            <motion.div
+              initial={{ y: -50, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: -50, opacity: 0 }}
+              className="bg-gradient-to-r from-green-500 to-emerald-600 px-6 py-2 rounded-2xl shadow-[0_8px_0_rgb(5,150,105)] border-2 border-white/30 text-center pointer-events-auto"
+            >
+              <p className="text-white/80 font-black text-[10px] uppercase tracking-widest leading-none mb-1">Target Word</p>
+              <h3 className="text-2xl font-black text-white leading-tight drop-shadow-md">
+                {currentTarget.translations[language || 'english']}
+              </h3>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       <AnimatePresence mode="wait">
@@ -552,18 +717,12 @@ export function StadiumGame({ language, onBack, setDoveMessage, setDoveCheering 
         {gameState === 'playing' && currentTarget && (
           <motion.div 
             key="playing"
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="flex flex-col items-center justify-between flex-1 w-full max-w-md z-10 pb-4 pointer-events-none"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="flex flex-col items-center justify-end flex-1 w-full max-w-md z-10 pb-8 pointer-events-none"
           >
-            {/* Question Box - More compact and higher up */}
-            <div className="bg-white/70 backdrop-blur-sm px-4 py-1.5 rounded-full shadow-lg border border-white/50 text-center mt-1 pointer-events-auto">
-              <p className="text-gray-500 font-bold text-[9px] uppercase tracking-tighter leading-none">Find the Tigrinya word for:</p>
-              <h3 className="text-lg font-black text-green-600 leading-tight">{currentTarget.translations[language || 'english']}</h3>
-            </div>
-
             {/* Options - Smaller and at the very bottom */}
-            <div className="grid grid-cols-2 gap-2 w-full px-6 mb-2 pointer-events-auto">
+            <div className="grid grid-cols-2 gap-3 w-full px-6 pointer-events-auto">
               {options.map((item, index) => (
                 <motion.button
                   key={item.id}
@@ -571,9 +730,9 @@ export function StadiumGame({ language, onBack, setDoveMessage, setDoveCheering 
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => handleSelect(item.id, index)}
-                  className="bg-white/90 backdrop-blur-sm py-3 px-4 rounded-xl shadow-lg border-2 border-transparent hover:border-green-400 transition-all flex flex-col items-center justify-center"
+                  className="bg-white/90 backdrop-blur-sm py-4 px-4 rounded-2xl shadow-xl border-4 border-transparent hover:border-green-400 transition-all flex flex-col items-center justify-center"
                 >
-                  <span className="text-lg font-geez font-black text-gray-800">{item.translations.tigrinya}</span>
+                  <span className="text-xl font-geez font-black text-gray-800">{item.translations.tigrinya}</span>
                 </motion.button>
               ))}
             </div>
