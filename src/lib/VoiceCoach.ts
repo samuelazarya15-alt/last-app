@@ -15,7 +15,10 @@ export class VoiceCoach {
     score: 'https://raw.githubusercontent.com/photonstorm/phaser3-examples/master/public/assets/audio/SoundEffects/ping.mp3',
     wrong: 'https://raw.githubusercontent.com/photonstorm/phaser3-examples/master/public/assets/audio/SoundEffects/alien_death.wav',
     pop: 'https://raw.githubusercontent.com/photonstorm/phaser3-examples/master/public/assets/audio/SoundEffects/magical_get.wav',
-    success: 'https://raw.githubusercontent.com/photonstorm/phaser3-examples/master/public/assets/audio/SoundEffects/key.wav'
+    success: 'https://raw.githubusercontent.com/photonstorm/phaser3-examples/master/public/assets/audio/SoundEffects/key.wav',
+    click: 'https://raw.githubusercontent.com/photonstorm/phaser3-examples/master/public/assets/audio/SoundEffects/numkey.wav',
+    dove_chirp: 'https://raw.githubusercontent.com/photonstorm/phaser3-examples/master/public/assets/audio/SoundEffects/paws.mp3',
+    dove_cheer: 'https://raw.githubusercontent.com/photonstorm/phaser3-examples/master/public/assets/audio/SoundEffects/one_up.wav'
   };
 
   constructor() {
@@ -59,7 +62,7 @@ export class VoiceCoach {
   }
 
   playClick() {
-    this.playSfx('pop');
+    this.playSfx('click');
   }
 
   playCorrect() {
@@ -68,6 +71,14 @@ export class VoiceCoach {
 
   playIncorrect() {
     this.playSfx('wrong');
+  }
+
+  playDoveChirp() {
+    this.playSfx('dove_chirp');
+  }
+
+  playDoveCheer() {
+    this.playSfx('dove_cheer');
   }
 
   playMusic(url: string) {
@@ -166,6 +177,7 @@ export class VoiceCoach {
   speak(text: string, langCode: string = 'english') {
     if (!this.synth || this.isMuted) return;
     this.synth.cancel();
+    this.playDoveChirp();
 
     const personalizedText = text.replace(/\[Name\]/g, this.name || 'friend');
     const utterance = new SpeechSynthesisUtterance(personalizedText);
@@ -193,6 +205,7 @@ export class VoiceCoach {
     return new Promise((resolve) => {
       if (!this.synth || this.isMuted) return resolve();
       this.synth.cancel();
+      this.playDoveChirp();
       
       const personalizedText = text.replace(/\[Name\]/g, this.name || 'friend');
       const utterance = new SpeechSynthesisUtterance(personalizedText);

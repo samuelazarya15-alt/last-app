@@ -6,7 +6,7 @@ import { voiceCoach } from '../lib/VoiceCoach';
 import { updateStats, logGameSession, getGameHistory, GameSession } from '../lib/progress';
 
 interface Word {
-  id: string;
+  id: number;
   geez: string;
   latin: string;
   english: string;

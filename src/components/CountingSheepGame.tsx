@@ -66,7 +66,7 @@ export const CountingSheepGame: React.FC<CountingSheepGameProps> = ({
     const opts = new Set<any>();
     opts.add(targetWord);
     
-    const availableWords = numberWords.filter(w => parseInt(w.id) >= 62 && parseInt(w.id) <= 62 + 10);
+    const availableWords = numberWords.filter(w => w.id >= 62 && w.id <= 62 + 10);
     
     while (opts.size < 3) {
       const randomWord = availableWords[Math.floor(Math.random() * availableWords.length)];

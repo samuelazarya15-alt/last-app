@@ -28,6 +28,8 @@ import { ShapeSorterGame } from './components/ShapeSorterGame';
 import { HoneyBeeGame } from './components/HoneyBeeGame';
 import { SunMoonGame } from './components/SunMoonGame';
 import { CountingSheepGame } from './components/CountingSheepGame';
+import { Basketball3DGame } from './components/Basketball3DGame';
+import { Cycling3DGame } from './components/Cycling3DGame';
 import { AlphabetBalloonGame } from './components/AlphabetBalloonGame';
 import { BodyPartsGame } from './components/BodyPartsGame';
 import { ClockTowerGame } from './components/ClockTowerGame';
@@ -64,6 +66,8 @@ const WORLDS = [
 const GAMES = [
   // Action Park
   { id: 'football', name: 'Word Football', icon: '⚽', color: 'green', world: 'action' },
+  { id: 'basketball3d', name: '3D Basketball', icon: '🏀', color: 'orange', world: 'action', isNew: true },
+  { id: 'cycling3d', name: '3D Cycling', icon: '🚴', color: 'blue', world: 'action', isNew: true },
   { id: 'dove', name: 'Dove Flight', icon: '🕊️', color: 'blue', world: 'action' },
   { id: 'rocket', name: 'Space Rocket', icon: '🚀', color: 'indigo', world: 'action' },
   { id: 'transport', name: 'Transport Race', icon: '🏎️', color: 'red', world: 'action' },
@@ -211,6 +215,8 @@ export default function App() {
 
       switch (currentGame) {
         case 'football': return <StadiumGame {...commonProps} />;
+        case 'basketball3d': return <Basketball3DGame {...commonProps} />;
+        case 'cycling3d': return <Cycling3DGame {...commonProps} />;
         case 'trace': return <TraceWordGame {...commonProps} />;
         case 'lion': return <FeedLionGame {...commonProps} />;
         case 'dove': return <FlyDoveGame {...commonProps} />;
@@ -276,6 +282,11 @@ export default function App() {
                   }}
                   className={`group relative bg-white p-4 rounded-[2rem] shadow-lg border-4 border-${game.color}-50 flex flex-col items-center justify-center gap-4 transition-all hover:border-${game.color}-400 hover:shadow-2xl w-full aspect-square`}
                 >
+                  {(game as any).isNew && (
+                    <div className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-black px-2 py-1 rounded-full shadow-md z-10 animate-pulse">
+                      NEW
+                    </div>
+                  )}
                   <div className={`bg-${game.color}-400 w-[72px] h-[72px] rounded-2xl shadow-sm group-hover:scale-110 group-hover:rotate-3 transition-transform flex items-center justify-center`}>
                     <span className="text-5xl">{game.icon}</span>
                   </div>

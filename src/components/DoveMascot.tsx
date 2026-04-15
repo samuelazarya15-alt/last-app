@@ -15,6 +15,12 @@ export function DoveMascot({ isCheering, size = "12vh", relative = false }: { is
     };
   }, []);
 
+  useEffect(() => {
+    if (isCheering) {
+      voiceCoach.playDoveCheer();
+    }
+  }, [isCheering]);
+
   return (
     <div className={`${relative ? 'relative' : 'absolute top-4 left-1/2 transform -translate-x-1/2 mt-4'} z-40 flex flex-col items-center gap-2 pointer-events-none`}>
       <div className="pointer-events-none flex justify-center">

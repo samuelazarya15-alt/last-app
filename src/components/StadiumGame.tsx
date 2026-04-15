@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef, useCallback, Suspense } from 'react';
+import React, { useState, useEffect, useRef, useCallback, Suspense, useMemo } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { PerspectiveCamera, OrbitControls, Text, Float, ContactShadows, useHelper, Sky } from '@react-three/drei';
+import { PerspectiveCamera, OrbitControls, Text, Float, ContactShadows, useHelper, Sky, Instances, Instance } from '@react-three/drei';
 import * as THREE from 'three';
 import { motion, AnimatePresence } from 'motion/react';
 import confetti from 'canvas-confetti';
@@ -81,7 +81,7 @@ function Pitch() {
   );
 }
 
-function Goal() {
+function Goal({ isGoal }: { isGoal: boolean | null }) {
   return (
     <group position={[0, 0, -25]}>
       {/* Posts */}
@@ -97,10 +97,17 @@ function Goal() {
         <cylinderGeometry args={[0.1, 0.1, 8.2]} />
         <meshStandardMaterial color="white" />
       </mesh>
-      {/* Net - More detailed */}
+      {/* Net - Glowing with success energy */}
       <mesh position={[0, 2, -1.5]} receiveShadow>
         <boxGeometry args={[8, 4, 3]} />
-        <meshStandardMaterial color="white" wireframe opacity={0.1} transparent />
+        <meshStandardMaterial 
+          color={isGoal ? "#00ff00" : "white"} 
+          wireframe 
+          opacity={isGoal ? 0.8 : 0.1} 
+          transparent 
+          emissive={isGoal ? "#00ff00" : "black"}
+          emissiveIntensity={isGoal ? 2 : 0}
+        />
       </mesh>
       {/* Back supports */}
       <mesh position={[-4, 0, -3]} rotation={[Math.PI / 2, 0, 0]}>
@@ -115,13 +122,106 @@ function Goal() {
   );
 }
 
-function Ball({ position, type }: { position: [number, number, number], type: string }) {
+function HolographicShield({ isShattered, targetX }: { isShattered: boolean, targetX: number }) {
+  const letters = ['ሀ', 'ለ', 'ሐ', 'መ', 'ረ', 'ሰ'];
+  const groupRef = useRef<THREE.Group>(null);
+
+  useFrame((state) => {
+    if (groupRef.current && !isShattered) {
+      groupRef.current.rotation.z = Math.sin(state.clock.elapsedTime) * 0.1;
+    }
+  });
+
+  if (isShattered) return <ShatterEffect position={[targetX, 2, -24]} />;
+
+  return (
+    <group ref={groupRef} position={[0, 2, -24]}>
+      <mesh>
+        <planeGeometry args={[10, 5]} />
+        <meshStandardMaterial 
+          color="#00bfff" 
+          transparent 
+          opacity={0.3} 
+          side={THREE.DoubleSide}
+          emissive="#00bfff"
+          emissiveIntensity={0.5}
+        />
+      </mesh>
+      {/* Floating Letters in Shield */}
+      {Array.from({ length: 20 }).map((_, i) => (
+        <Text
+          key={i}
+          position={[
+            (Math.random() - 0.5) * 8,
+            (Math.random() - 0.5) * 4,
+            0.1
+          ]}
+          fontSize={0.4}
+          color="#ffffff"
+          fillOpacity={0.8}
+        >
+          {letters[i % letters.length]}
+        </Text>
+      ))}
+    </group>
+  );
+}
+
+function ShatterEffect({ position }: { position: [number, number, number] }) {
+  const shards = useMemo(() => {
+    return Array.from({ length: 40 }).map(() => ({
+      pos: [0, 0, 0] as [number, number, number],
+      vel: [
+        (Math.random() - 0.5) * 10,
+        (Math.random() - 0.5) * 10,
+        (Math.random() - 0.5) * 5
+      ] as [number, number, number],
+      rot: [Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI] as [number, number, number],
+      size: 0.1 + Math.random() * 0.3
+    }));
+  }, []);
+
+  return (
+    <group position={position}>
+      {shards.map((s, i) => (
+        <Shard key={i} {...s} />
+      ))}
+    </group>
+  );
+}
+
+function Shard({ pos, vel, rot, size }: any) {
+  const meshRef = useRef<THREE.Mesh>(null);
+  useFrame((state, delta) => {
+    if (meshRef.current) {
+      meshRef.current.position.x += vel[0] * delta;
+      meshRef.current.position.y += vel[1] * delta;
+      meshRef.current.position.z += vel[2] * delta;
+      meshRef.current.rotation.x += rot[0] * delta;
+      meshRef.current.rotation.y += rot[1] * delta;
+      meshRef.current.scale.setScalar(THREE.MathUtils.lerp(meshRef.current.scale.x, 0, 0.05));
+    }
+  });
+  return (
+    <mesh ref={meshRef} position={pos}>
+      <boxGeometry args={[size, size, size]} />
+      <meshStandardMaterial color="#00bfff" transparent opacity={0.6} emissive="#00bfff" emissiveIntensity={1} />
+    </mesh>
+  );
+}
+
+function Ball({ position, type, isKicking }: { position: [number, number, number], type: string, isKicking: boolean }) {
   const meshRef = useRef<THREE.Mesh>(null);
   
   useFrame((state) => {
     if (meshRef.current) {
-      meshRef.current.rotation.x += 0.01;
-      meshRef.current.rotation.y += 0.01;
+      meshRef.current.rotation.x += isKicking ? 0.2 : 0.01;
+      meshRef.current.rotation.y += isKicking ? 0.2 : 0.01;
+      if (isKicking) {
+        meshRef.current.scale.z = 1.4; // Motion blur stretch
+      } else {
+        meshRef.current.scale.setScalar(1);
+      }
     }
   });
 
@@ -129,18 +229,31 @@ function Ball({ position, type }: { position: [number, number, number], type: st
     if (type === 'golden') return '#FFD700';
     if (type === 'fire') return '#FF4500';
     if (type === 'ice') return '#00BFFF';
-    return 'white';
+    return '#f8fafc'; // Metallic white
   };
 
   return (
-    <mesh ref={meshRef} position={position} castShadow>
-      <sphereGeometry args={[0.4, 32, 32]} />
-      <meshStandardMaterial 
-        color={getColor()} 
-        emissive={type !== 'standard' ? getColor() : 'black'}
-        emissiveIntensity={0.5}
-      />
-    </mesh>
+    <group position={position}>
+      <mesh ref={meshRef} castShadow>
+        <sphereGeometry args={[0.4, 32, 32]} />
+        <meshStandardMaterial 
+          color={getColor()} 
+          roughness={0.1}
+          metalness={0.8}
+          emissive={type !== 'standard' ? getColor() : '#22c55e'} // Neon green seams
+          emissiveIntensity={type !== 'standard' ? 1 : 0.5}
+        />
+      </mesh>
+      {/* Neon Green Seams (Simplified) */}
+      <mesh rotation={[Math.PI / 2, 0, 0]}>
+        <torusGeometry args={[0.405, 0.01, 16, 100]} />
+        <meshStandardMaterial color="#22c55e" emissive="#22c55e" emissiveIntensity={2} />
+      </mesh>
+      <mesh rotation={[0, Math.PI / 2, 0]}>
+        <torusGeometry args={[0.405, 0.01, 16, 100]} />
+        <meshStandardMaterial color="#22c55e" emissive="#22c55e" emissiveIntensity={2} />
+      </mesh>
+    </group>
   );
 }
 
@@ -484,6 +597,95 @@ function Goalkeeper({ ballPos, isKicking, targetX }: { ballPos: [number, number,
 
 type BallType = 'standard' | 'golden' | 'fire' | 'ice';
 
+function ArenaCrowd({ isGoal }: { isGoal: boolean | null }) {
+  const count = 3000; // More massive
+  const tiers = 5; // More tiers
+  const spectatorsPerSide = Math.floor(count / 4);
+  
+  const spectators = useMemo(() => {
+    const temp = [];
+    // Define the boundaries of the stands
+    const sides = [
+      { start: [-22, -32], end: [22, -32], dir: [1, 0], normal: [0, 1] }, // Bottom
+      { start: [22, -32], end: [22, 32], dir: [0, 1], normal: [-1, 0] }, // Right
+      { start: [22, 32], end: [-22, 32], dir: [-1, 0], normal: [0, -1] }, // Top
+      { start: [-22, 32], end: [-22, -32], dir: [0, -1], normal: [1, 0] }, // Left
+    ];
+
+    sides.forEach((side, sideIdx) => {
+      const length = sideIdx % 2 === 0 ? 44 : 64;
+      const perSide = Math.floor(count * (length / 216)); // Proportional to length
+
+      for (let t = 0; t < tiers; t++) {
+        const offsetDist = 2 + t * 3;
+        const y = 1 + t * 2;
+        
+        for (let i = 0; i < perSide; i++) {
+          const progress = i / perSide;
+          const x = side.start[0] + side.dir[0] * length * progress + side.normal[0] * offsetDist;
+          const z = side.start[1] + side.dir[1] * length * progress + side.normal[1] * offsetDist;
+          
+          temp.push({
+            position: [x, y, z] as [number, number, number],
+            rotation: [0, Math.atan2(side.normal[0], side.normal[1]), 0] as [number, number, number],
+            color: new THREE.Color().setHSL(Math.random(), 0.8, 0.6),
+            scale: 0.9 + Math.random() * 0.5,
+            offset: Math.random() * Math.PI * 2
+          });
+        }
+      }
+    });
+    return temp;
+  }, []);
+
+  return (
+    <group>
+      {/* Banners */}
+      {[
+        { pos: [0, 4, -31], rot: [0, 0, 0], text: "ኸ ወ ዐ ዘ" },
+        { pos: [0, 4, 31], rot: [0, Math.PI, 0], text: "ሰ ለ መ ረ" },
+        { pos: [-21, 4, 0], rot: [0, Math.PI / 2, 0], text: "ቀ በ ተ ነ" },
+        { pos: [21, 4, 0], rot: [0, -Math.PI / 2, 0], text: "አ ከ ወ ዐ" }
+      ].map((b, i) => (
+        <group key={i} position={b.pos as any} rotation={b.rot as any}>
+          <mesh>
+            <planeGeometry args={[10, 2]} />
+            <meshStandardMaterial color="#1e40af" side={THREE.DoubleSide} />
+            <Text
+              position={[0, 0, 0.05]}
+              fontSize={1}
+              color="white"
+            >
+              {b.text}
+            </Text>
+          </mesh>
+        </group>
+      ))}
+
+      {/* Instanced Spectators */}
+      <Instances range={spectators.length}>
+        <capsuleGeometry args={[0.25, 0.6, 4, 8]} />
+        <meshStandardMaterial roughness={0.6} />
+        {spectators.map((s, i) => (
+          <SpectatorInstance key={i} {...s} />
+        ))}
+      </Instances>
+    </group>
+  );
+}
+
+function SpectatorInstance({ position, rotation, color, scale, offset, isGoal }: any) {
+  const ref = useRef<any>(null);
+  useFrame((state) => {
+    if (ref.current) {
+      const speed = isGoal ? 12 : 4;
+      const amplitude = isGoal ? 0.5 : 0.15;
+      ref.current.position.y = position[1] + Math.sin(state.clock.elapsedTime * speed + offset) * amplitude;
+    }
+  });
+  return <Instance ref={ref} position={position} rotation={rotation} color={color} scale={scale} />;
+}
+
 export function StadiumGame({ language, onBack, setDoveMessage, setDoveCheering }: any) {
   const [score, setScore] = useState(0);
   const [timeLeft, setTimeLeft] = useState(60);
@@ -497,6 +699,7 @@ export function StadiumGame({ language, onBack, setDoveMessage, setDoveCheering 
   const [ballPos, setBallPos] = useState<[number, number, number]>([0, 0.4, -15]);
   const [targetX, setTargetX] = useState(0);
   const [isGoal, setIsGoal] = useState<boolean | null>(null);
+  const [isShieldShattered, setIsShieldShattered] = useState(false);
 
   const startGame = () => {
     setScore(0);
@@ -537,6 +740,7 @@ export function StadiumGame({ language, onBack, setDoveMessage, setDoveCheering 
     setBallPos([0, 0.4, -15]);
     setIsAnimating(false);
     setIsGoal(null);
+    setIsShieldShattered(false);
     setSelectedOption(null);
 
     const targetLang = language || 'english';
@@ -588,6 +792,11 @@ export function StadiumGame({ language, onBack, setDoveMessage, setDoveCheering 
       const newY = 0.4 + Math.sin(progress * Math.PI) * heightMultiplier;
       
       setBallPos([newX, newY, newZ]);
+
+      if (newZ < -23.5 && !isShieldShattered && isCorrect) {
+        setIsShieldShattered(true);
+        voiceCoach.playSfx('success'); // Shatter sound
+      }
 
       if (progress < 1) {
         requestAnimationFrame(animateBall);
@@ -676,7 +885,10 @@ export function StadiumGame({ language, onBack, setDoveMessage, setDoveCheering 
       <div className="w-full bg-white/95 backdrop-blur-md z-20 shadow-lg border-b-4 border-green-500/30">
         <div className="w-full flex justify-between items-center px-4 py-2">
           <button 
-            onClick={onBack}
+            onClick={() => {
+              voiceCoach.playClick();
+              onBack();
+            }}
             className="w-10 h-10 bg-green-50 rounded-full flex items-center justify-center shadow-md text-green-600 hover:scale-110 active:scale-95 transition-all border-2 border-green-100"
           >
             <ArrowLeft size={20} />
@@ -718,14 +930,17 @@ export function StadiumGame({ language, onBack, setDoveMessage, setDoveCheering 
       {/* 3D Canvas */}
       <div className="absolute inset-0 z-0 pt-32">
         <Canvas shadows camera={{ position: [0, 8, 10], fov: 50 }}>
-          <ambientLight intensity={0.8} />
+          <ambientLight intensity={0.4} />
+          {/* Stadium Floodlights */}
+          <spotLight position={[30, 40, 40]} angle={0.5} penumbra={0.5} intensity={3} color="#ffffff" castShadow />
+          <spotLight position={[-30, 40, 40]} angle={0.5} penumbra={0.5} intensity={3} color="#ffffff" castShadow />
+          <spotLight position={[30, 40, -40]} angle={0.5} penumbra={0.5} intensity={3} color="#ffffff" castShadow />
+          <spotLight position={[-30, 40, -40]} angle={0.5} penumbra={0.5} intensity={3} color="#ffffff" castShadow />
+          
           <directionalLight 
-            position={[10, 20, 10]} 
-            intensity={2} 
-            castShadow 
-            shadow-mapSize={[1024, 1024]}
+            position={[0, 50, 0]} 
+            intensity={0.5} 
           />
-          <pointLight position={[-10, 10, -10]} intensity={1} color="#ffffff" />
           
           <OrbitControls 
             enableZoom={false} 
@@ -736,8 +951,10 @@ export function StadiumGame({ language, onBack, setDoveMessage, setDoveCheering 
           />
 
           <Pitch />
-          <Goal />
-          <Ball position={ballPos} type={ballType} />
+          <ArenaCrowd isGoal={isGoal} />
+          <HolographicShield isShattered={isShieldShattered} targetX={targetX} />
+          <Goal isGoal={isGoal} />
+          <Ball position={ballPos} type={ballType} isKicking={isAnimating} />
           <Player position={[0, 0, -10]} isKicking={isAnimating} targetX={targetX} isGoal={isGoal} />
           <Goalkeeper ballPos={ballPos} isKicking={isAnimating} targetX={targetX} />
           <ContactShadows opacity={0.4} scale={40} blur={2} far={10} />

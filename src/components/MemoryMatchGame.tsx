@@ -8,7 +8,7 @@ import { voiceCoach } from '../lib/VoiceCoach';
 
 interface Card {
   id: number;
-  wordId: string;
+  wordId: number;
   text: string;
   type: 'native' | 'translation';
   isFlipped: boolean;
