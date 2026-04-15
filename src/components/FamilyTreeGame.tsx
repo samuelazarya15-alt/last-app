@@ -97,7 +97,18 @@ export const FamilyTreeGame: React.FC<FamilyTreeGameProps> = ({
   }, [timeLeft, gameState, score]);
 
   return (
-    <div className="w-full h-full bg-green-50 flex flex-col items-center p-4 relative overflow-hidden">
+    <div className="w-full h-full flex flex-col items-center p-4 relative overflow-hidden">
+      {/* Background Image of Family Gathering */}
+      <div className="absolute inset-0 z-0">
+        <img 
+          src="https://picsum.photos/seed/family-gathering/1920/1080" 
+          alt="Family Gathering" 
+          className="w-full h-full object-cover opacity-20"
+          referrerPolicy="no-referrer"
+        />
+        <div className="absolute inset-0 bg-green-50/80" />
+      </div>
+
       {/* Header */}
       <div className="w-full flex justify-between items-center z-10 mb-4">
         <button 

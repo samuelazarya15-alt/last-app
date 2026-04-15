@@ -18,7 +18,18 @@ export function Home({ setCurrentTab, setCurrentWorld }: HomeProps) {
   const kidName = voiceCoach.getName() || 'Friend';
 
   return (
-    <div className="w-full h-full p-4 pb-8 pt-[28vh] flex flex-col items-center justify-start bg-sky-50 overflow-y-auto">
+    <div className="w-full h-full p-4 pb-8 pt-[28vh] flex flex-col items-center justify-start relative overflow-y-auto">
+      {/* Background Image of Asmara */}
+      <div className="absolute inset-0 z-0">
+        <img 
+          src="https://picsum.photos/seed/asmara-city/1920/1080" 
+          alt="Asmara City" 
+          className="w-full h-full object-cover opacity-20"
+          referrerPolicy="no-referrer"
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-sky-50/80 to-sky-50" />
+      </div>
+
       <motion.div 
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}

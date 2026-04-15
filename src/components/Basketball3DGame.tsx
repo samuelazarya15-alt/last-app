@@ -16,8 +16,8 @@ interface BallProps {
   isAnimating: boolean;
 }
 
-function AlphabetEnergyTrail({ position, isAnimating }: { position: THREE.Vector3, isAnimating: boolean }) {
-  const letters = ['ሀ', 'ለ', 'ሐ', 'መ', 'ረ', 'ሰ'];
+function GeezFireTrail({ position, isAnimating }: { position: THREE.Vector3, isAnimating: boolean }) {
+  const letters = ['ኸ', 'ወ', 'ዐ', 'ዘ'];
   const trailRefs = useRef<THREE.Group[]>([]);
 
   useFrame((state) => {
@@ -25,19 +25,18 @@ function AlphabetEnergyTrail({ position, isAnimating }: { position: THREE.Vector
     const t = state.clock.elapsedTime;
     trailRefs.current.forEach((ref, i) => {
       if (ref) {
-        // Swirling galaxy motion
-        const delay = (i + 1) * 0.1;
-        const orbitRadius = 0.5 + Math.sin(t * 5 + i) * 0.3;
-        const angle = t * 10 + i * (Math.PI / 3);
+        // Dynamic comet tail motion
+        const delay = (i + 1) * 0.15;
+        const orbitRadius = 0.3 + Math.sin(t * 8 + i) * 0.2;
+        const angle = t * 15 + i * (Math.PI / 2);
         
         const targetX = position.x + Math.cos(angle) * orbitRadius;
         const targetY = position.y + Math.sin(angle) * orbitRadius;
-        const targetZ = position.z + delay * 8;
+        const targetZ = position.z + delay * 10;
 
-        ref.position.lerp(new THREE.Vector3(targetX, targetY, targetZ), 0.15);
-        ref.scale.setScalar((1 - i * 0.1) * (0.8 + Math.sin(t * 10) * 0.2));
-        ref.rotation.y += 0.1;
-        ref.rotation.x += 0.05;
+        ref.position.lerp(new THREE.Vector3(targetX, targetY, targetZ), 0.2);
+        ref.scale.setScalar((1 - i * 0.15) * (1 + Math.sin(t * 20) * 0.3));
+        ref.rotation.y += 0.2;
       }
     });
   });
@@ -48,13 +47,16 @@ function AlphabetEnergyTrail({ position, isAnimating }: { position: THREE.Vector
     <group>
       {letters.map((char, i) => (
         <group key={i} ref={(el) => (trailRefs.current[i] = el!)}>
+          {/* Flame Core */}
           <Text
-            fontSize={0.6}
-            color="#ff4500"
+            fontSize={0.8}
+            color={i % 2 === 0 ? "#ff4500" : "#00bfff"} // Orange and Blue flames
           >
             {char}
           </Text>
-          <Sparkles count={5} scale={0.3} size={1} speed={1} color="#ff8c00" />
+          {/* Flame Aura */}
+          <Sparkles count={15} scale={0.5} size={2} speed={2} color={i % 2 === 0 ? "#ff8c00" : "#00bfff"} />
+          <pointLight intensity={2} distance={2} color={i % 2 === 0 ? "#ff4500" : "#00bfff"} />
         </group>
       ))}
     </group>
@@ -136,7 +138,7 @@ function Ball({ id, word, position, isCorrect, onSelect, isAnimating }: BallProp
           )}
         </mesh>
       </Float>
-      {isAnimating && isCorrect && <AlphabetEnergyTrail position={currentPos} isAnimating={isAnimating} />}
+      {isAnimating && isCorrect && <GeezFireTrail position={currentPos} isAnimating={isAnimating} />}
     </>
   );
 }

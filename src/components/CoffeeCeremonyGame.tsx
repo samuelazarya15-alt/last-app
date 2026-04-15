@@ -97,7 +97,18 @@ export const CoffeeCeremonyGame: React.FC<CoffeeCeremonyGameProps> = ({
   }, [timeLeft, gameState, score]);
 
   return (
-    <div className="w-full h-full bg-stone-50 flex flex-col items-center p-4 relative overflow-hidden">
+    <div className="w-full h-full flex flex-col items-center p-4 relative overflow-hidden">
+      {/* Background Image of Coffee Ceremony */}
+      <div className="absolute inset-0 z-0">
+        <img 
+          src="https://picsum.photos/seed/coffee-ceremony/1920/1080" 
+          alt="Coffee Ceremony" 
+          className="w-full h-full object-cover opacity-15"
+          referrerPolicy="no-referrer"
+        />
+        <div className="absolute inset-0 bg-stone-50/80" />
+      </div>
+
       {/* Header */}
       <div className="w-full flex justify-between items-center z-10 mb-4">
         <button 

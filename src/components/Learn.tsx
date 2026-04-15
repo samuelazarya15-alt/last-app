@@ -55,7 +55,18 @@ export function Learn({ language }: { language: string }) {
   };
 
   return (
-    <div className="w-full h-full flex flex-col bg-sky-50">
+    <div className="w-full h-full flex flex-col relative overflow-hidden">
+      {/* Background Image of Asmara */}
+      <div className="absolute inset-0 z-0">
+        <img 
+          src="https://picsum.photos/seed/asmara-city/1920/1080" 
+          alt="Asmara City" 
+          className="w-full h-full object-cover opacity-10"
+          referrerPolicy="no-referrer"
+        />
+        <div className="absolute inset-0 bg-sky-50/90" />
+      </div>
+
       {/* Optimized Header (14vh) */}
       <div className="h-[14vh] shrink-0 bg-white/80 backdrop-blur-md shadow-sm z-10 flex flex-col items-center justify-center px-4 pt-1">
         <div className="w-full max-w-xl relative mb-2">

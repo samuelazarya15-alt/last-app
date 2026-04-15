@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback, Suspense, useMemo } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { PerspectiveCamera, OrbitControls, Text, Float, ContactShadows, useHelper, Sky, Instances, Instance } from '@react-three/drei';
+import { PerspectiveCamera, OrbitControls, Text, Float, ContactShadows, useHelper, Sky, Instances, Instance, Sparkles } from '@react-three/drei';
 import * as THREE from 'three';
 import { motion, AnimatePresence } from 'motion/react';
 import confetti from 'canvas-confetti';
@@ -148,20 +148,21 @@ function HolographicShield({ isShattered, targetX }: { isShattered: boolean, tar
         />
       </mesh>
       {/* Floating Letters in Shield */}
-      {Array.from({ length: 20 }).map((_, i) => (
-        <Text
-          key={i}
-          position={[
-            (Math.random() - 0.5) * 8,
-            (Math.random() - 0.5) * 4,
-            0.1
-          ]}
-          fontSize={0.4}
-          color="#ffffff"
-          fillOpacity={0.8}
-        >
-          {letters[i % letters.length]}
-        </Text>
+      {Array.from({ length: 100 }).map((_, i) => (
+        <group key={i} position={[
+          (Math.random() - 0.5) * 9,
+          (Math.random() - 0.5) * 4.5,
+          0.1
+        ]}>
+          <Text
+            fontSize={0.3}
+            color="#ffffff"
+            fillOpacity={0.9}
+          >
+            {letters[i % letters.length]}
+          </Text>
+          <pointLight intensity={0.1} distance={1} color="#00bfff" />
+        </group>
       ))}
     </group>
   );
@@ -169,15 +170,16 @@ function HolographicShield({ isShattered, targetX }: { isShattered: boolean, tar
 
 function ShatterEffect({ position }: { position: [number, number, number] }) {
   const shards = useMemo(() => {
-    return Array.from({ length: 40 }).map(() => ({
+    return Array.from({ length: 80 }).map(() => ({
       pos: [0, 0, 0] as [number, number, number],
       vel: [
-        (Math.random() - 0.5) * 10,
-        (Math.random() - 0.5) * 10,
-        (Math.random() - 0.5) * 5
+        (Math.random() - 0.5) * 15,
+        (Math.random() - 0.5) * 15,
+        (Math.random() - 0.5) * 8
       ] as [number, number, number],
       rot: [Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI] as [number, number, number],
-      size: 0.1 + Math.random() * 0.3
+      size: 0.05 + Math.random() * 0.2,
+      char: ['ሀ', 'ለ', 'ሐ', 'መ', 'ረ', 'ሰ'][Math.floor(Math.random() * 6)]
     }));
   }, []);
 
@@ -186,12 +188,13 @@ function ShatterEffect({ position }: { position: [number, number, number] }) {
       {shards.map((s, i) => (
         <Shard key={i} {...s} />
       ))}
+      <Sparkles count={100} scale={5} size={3} speed={2} color="#00bfff" />
     </group>
   );
 }
 
-function Shard({ pos, vel, rot, size }: any) {
-  const meshRef = useRef<THREE.Mesh>(null);
+function Shard({ pos, vel, rot, size, char }: any) {
+  const meshRef = useRef<THREE.Group>(null);
   useFrame((state, delta) => {
     if (meshRef.current) {
       meshRef.current.position.x += vel[0] * delta;
@@ -203,10 +206,13 @@ function Shard({ pos, vel, rot, size }: any) {
     }
   });
   return (
-    <mesh ref={meshRef} position={pos}>
-      <boxGeometry args={[size, size, size]} />
-      <meshStandardMaterial color="#00bfff" transparent opacity={0.6} emissive="#00bfff" emissiveIntensity={1} />
-    </mesh>
+    <group ref={meshRef} position={pos}>
+      <mesh>
+        <boxGeometry args={[size, size, size]} />
+        <meshStandardMaterial color="#00bfff" transparent opacity={0.6} emissive="#00bfff" emissiveIntensity={1} />
+      </mesh>
+      <Text fontSize={size * 2} color="white" position={[0, 0, size]}>{char}</Text>
+    </group>
   );
 }
 
@@ -597,6 +603,111 @@ function Goalkeeper({ ballPos, isKicking, targetX }: { ballPos: [number, number,
 
 type BallType = 'standard' | 'golden' | 'fire' | 'ice';
 
+function DetailedPlayerPortrait() {
+  const skinRef = useRef<THREE.MeshPhysicalMaterial>(null);
+  const eyeRef = useRef<THREE.MeshPhysicalMaterial>(null);
+
+  useFrame((state) => {
+    const t = state.clock.elapsedTime;
+    if (skinRef.current) {
+      skinRef.current.roughness = 0.15 + Math.sin(t * 0.5) * 0.05;
+    }
+  });
+
+  return (
+    <group position={[0, 0, -5]} rotation={[0, 0, 0]}>
+      {/* Torso & Jersey */}
+      <mesh position={[0, 0.5, 0]} castShadow>
+        <capsuleGeometry args={[0.6, 1.2, 16, 32]} />
+        <meshStandardMaterial color="#22c55e" roughness={0.9} />
+      </mesh>
+      
+      {/* Head (Eritrean Descent) */}
+      <group position={[0, 1.8, 0]}>
+        <mesh castShadow>
+          <sphereGeometry args={[0.45, 64, 64]} />
+          <meshPhysicalMaterial 
+            ref={skinRef}
+            color="#5d3a24" 
+            roughness={0.2} 
+            transmission={0.1} 
+            thickness={0.5}
+            clearcoat={0.3}
+          />
+        </mesh>
+
+        {/* Curly Hair */}
+        <group position={[0, 0.3, 0]}>
+          {Array.from({ length: 150 }).map((_, i) => {
+            const phi = Math.acos(-1 + (2 * i) / 150);
+            const theta = Math.sqrt(150 * Math.PI) * phi;
+            const x = 0.45 * Math.cos(theta) * Math.sin(phi);
+            const y = 0.45 * Math.sin(theta) * Math.sin(phi);
+            const z = 0.45 * Math.cos(phi);
+            if (y < 0) return null;
+            return (
+              <mesh key={i} position={[x, y, z]} rotation={[Math.random(), Math.random(), Math.random()]}>
+                <torusGeometry args={[0.03, 0.005, 8, 16, Math.PI]} />
+                <meshStandardMaterial color="#1a0f08" />
+              </mesh>
+            );
+          })}
+        </group>
+
+        {/* Eyes */}
+        {[-0.12, 0.12].map((x, i) => (
+          <group key={i} position={[x, 0.05, 0.38]}>
+            <mesh><sphereGeometry args={[0.06, 32, 32]} /><meshStandardMaterial color="white" /></mesh>
+            <mesh position={[0, 0, 0.03]}>
+              <sphereGeometry args={[0.035, 32, 32]} />
+              <meshPhysicalMaterial color="#3d2b1f" roughness={0} transmission={0.8} thickness={0.1} ior={1.4} />
+            </mesh>
+            <mesh position={[0, 0, 0.05]}><circleGeometry args={[0.015, 16]} /><meshBasicMaterial color="black" /></mesh>
+            <mesh position={[0.02, 0.02, 0.06]}><sphereGeometry args={[0.008, 8, 8]} /><meshBasicMaterial color="white" /></mesh>
+          </group>
+        ))}
+      </group>
+    </group>
+  );
+}
+
+function DetailedFrontRow() {
+  const manSkinRef = useRef<THREE.MeshPhysicalMaterial>(null);
+  return (
+    <group position={[0, 0, 10]} rotation={[0, Math.PI, 0]}>
+      <mesh position={[0, 1.2, 0.5]}><boxGeometry args={[10, 0.1, 0.1]} /><meshStandardMaterial color="#333" /></mesh>
+      {[
+        { x: -2, text: "ሀ ለ ሐ" },
+        { x: 2, text: "መ ረ ሰ" }
+      ].map((b, i) => (
+        <group key={i} position={[b.x, 0.5, 0.55]}>
+          <mesh><planeGeometry args={[3, 1.5]} /><meshStandardMaterial color="#1e40af" side={THREE.DoubleSide} /><Text position={[0, 0, 0.01]} fontSize={0.4} color="white">{b.text}</Text></mesh>
+        </group>
+      ))}
+      {/* Exultant Man */}
+      <group position={[-1.5, 0, 0]}>
+        <mesh position={[0, 1.2, 0]} castShadow><capsuleGeometry args={[0.35, 0.7, 8, 16]} /><meshStandardMaterial color="#2d1b0d" roughness={0.4} /></mesh>
+        <group position={[0, 2, 0]}>
+          <mesh castShadow><sphereGeometry args={[0.3, 32, 32]} /><meshPhysicalMaterial ref={manSkinRef} color="#4a2c1a" roughness={0.2} transmission={0.1} thickness={0.5} /></mesh>
+          <group position={[0, -0.1, 0.2]}>
+            {Array.from({ length: 20 }).map((_, i) => (
+              <mesh key={i} position={[(Math.random() - 0.5) * 0.4, -Math.random() * 0.2, 0.05]} rotation={[0.2, 0, 0]}><cylinderGeometry args={[0.005, 0.005, 0.1]} /><meshStandardMaterial color="#1a0f08" /></mesh>
+            ))}
+          </group>
+        </group>
+      </group>
+      {/* Cheering Woman */}
+      <group position={[0, 0, 0]}>
+        <mesh position={[0, 1.2, 0]} castShadow><capsuleGeometry args={[0.3, 0.6, 8, 16]} /><meshStandardMaterial color="#ef4444" roughness={0.8} /></mesh>
+        <group position={[0, 1.9, 0]}>
+          <mesh castShadow><sphereGeometry args={[0.28, 32, 32]} /><meshPhysicalMaterial color="#fde68a" roughness={0.3} transmission={0.15} thickness={0.4} /></mesh>
+          <mesh position={[0, -0.1, 0.25]}><circleGeometry args={[0.08, 32]} /><meshBasicMaterial color="#331111" /></mesh>
+        </group>
+      </group>
+    </group>
+  );
+}
+
 function ArenaCrowd({ isGoal }: { isGoal: boolean | null }) {
   const count = 3000; // More massive
   const tiers = 5; // More tiers
@@ -700,6 +811,8 @@ export function StadiumGame({ language, onBack, setDoveMessage, setDoveCheering 
   const [targetX, setTargetX] = useState(0);
   const [isGoal, setIsGoal] = useState<boolean | null>(null);
   const [isShieldShattered, setIsShieldShattered] = useState(false);
+  const [isCinematic, setIsCinematic] = useState(false);
+  const [isPortrait, setIsPortrait] = useState(false);
 
   const startGame = () => {
     setScore(0);
@@ -906,6 +1019,26 @@ export function StadiumGame({ language, onBack, setDoveMessage, setDoveCheering 
               <Timer className={timeLeft <= 10 ? "text-red-500 animate-pulse" : "text-red-400"} size={14} />
               <span className={`font-black text-xs tracking-tight ${timeLeft <= 10 ? "text-red-600" : "text-gray-700"}`}>{timeLeft}s</span>
             </div>
+            <button 
+              onClick={() => {
+                voiceCoach.playClick();
+                setIsCinematic(!isCinematic);
+                setIsPortrait(false);
+              }}
+              className={`px-3 py-1 rounded-xl shadow-sm font-black text-[10px] transition-all ${isCinematic ? 'bg-orange-500 text-white' : 'bg-white text-orange-600 border border-orange-100'}`}
+            >
+              {isCinematic ? 'EXIT' : 'CINEMATIC'}
+            </button>
+            <button 
+              onClick={() => {
+                voiceCoach.playClick();
+                setIsPortrait(!isPortrait);
+                setIsCinematic(false);
+              }}
+              className={`px-3 py-1 rounded-xl shadow-sm font-black text-[10px] transition-all ${isPortrait ? 'bg-blue-500 text-white' : 'bg-white text-blue-600 border border-blue-100'}`}
+            >
+              {isPortrait ? 'EXIT' : 'PORTRAIT'}
+            </button>
           </div>
         </div>
 
@@ -929,7 +1062,12 @@ export function StadiumGame({ language, onBack, setDoveMessage, setDoveCheering 
 
       {/* 3D Canvas */}
       <div className="absolute inset-0 z-0 pt-32">
-        <Canvas shadows camera={{ position: [0, 8, 10], fov: 50 }}>
+        <Canvas shadows>
+          <PerspectiveCamera 
+            makeDefault 
+            position={isPortrait ? [0, 1.5, 0] : isCinematic ? [0, 1, 12] : [0, 8, 10]} 
+            fov={isPortrait ? 25 : isCinematic ? 30 : 50} 
+          />
           <ambientLight intensity={0.4} />
           {/* Stadium Floodlights */}
           <spotLight position={[30, 40, 40]} angle={0.5} penumbra={0.5} intensity={3} color="#ffffff" castShadow />
@@ -952,11 +1090,19 @@ export function StadiumGame({ language, onBack, setDoveMessage, setDoveCheering 
 
           <Pitch />
           <ArenaCrowd isGoal={isGoal} />
-          <HolographicShield isShattered={isShieldShattered} targetX={targetX} />
-          <Goal isGoal={isGoal} />
-          <Ball position={ballPos} type={ballType} isKicking={isAnimating} />
-          <Player position={[0, 0, -10]} isKicking={isAnimating} targetX={targetX} isGoal={isGoal} />
-          <Goalkeeper ballPos={ballPos} isKicking={isAnimating} targetX={targetX} />
+          {!isPortrait && <DetailedFrontRow />}
+          {isPortrait && <DetailedPlayerPortrait />}
+          
+          {!isPortrait && (
+            <>
+              <HolographicShield isShattered={isShieldShattered} targetX={targetX} />
+              <Goal isGoal={isGoal} />
+              <Ball position={ballPos} type={ballType} isKicking={isAnimating} />
+              <Player position={[0, 0, -10]} isKicking={isAnimating} targetX={targetX} isGoal={isGoal} />
+              <Goalkeeper ballPos={ballPos} isKicking={isAnimating} targetX={targetX} />
+            </>
+          )}
+          
           <ContactShadows opacity={0.4} scale={40} blur={2} far={10} />
           <Sky sunPosition={[100, 20, 100]} />
 
