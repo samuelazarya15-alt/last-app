@@ -625,44 +625,43 @@ function DetailedPlayerPortrait() {
       {/* Head (Eritrean Descent) */}
       <group position={[0, 1.8, 0]}>
         <mesh castShadow>
-          <sphereGeometry args={[0.45, 64, 64]} />
-          <meshPhysicalMaterial 
-            ref={skinRef}
+          <sphereGeometry args={[0.45, 32, 32]} />
+          <meshStandardMaterial 
+            ref={skinRef as any}
             color="#5d3a24" 
-            roughness={0.2} 
-            transmission={0.1} 
-            thickness={0.5}
-            clearcoat={0.3}
+            roughness={0.4} 
+            metalness={0.1}
           />
         </mesh>
 
-        {/* Curly Hair */}
+        {/* Curly Hair - Optimized with Instances */}
         <group position={[0, 0.3, 0]}>
-          {Array.from({ length: 150 }).map((_, i) => {
-            const phi = Math.acos(-1 + (2 * i) / 150);
-            const theta = Math.sqrt(150 * Math.PI) * phi;
-            const x = 0.45 * Math.cos(theta) * Math.sin(phi);
-            const y = 0.45 * Math.sin(theta) * Math.sin(phi);
-            const z = 0.45 * Math.cos(phi);
-            if (y < 0) return null;
-            return (
-              <mesh key={i} position={[x, y, z]} rotation={[Math.random(), Math.random(), Math.random()]}>
-                <torusGeometry args={[0.03, 0.005, 8, 16, Math.PI]} />
-                <meshStandardMaterial color="#1a0f08" />
-              </mesh>
-            );
-          })}
+          <Instances limit={150}>
+            <torusGeometry args={[0.03, 0.005, 8, 16, Math.PI]} />
+            <meshStandardMaterial color="#1a0f08" />
+            {Array.from({ length: 150 }).map((_, i) => {
+              const phi = Math.acos(-1 + (2 * i) / 150);
+              const theta = Math.sqrt(150 * Math.PI) * phi;
+              const x = 0.45 * Math.cos(theta) * Math.sin(phi);
+              const y = 0.45 * Math.sin(theta) * Math.sin(phi);
+              const z = 0.45 * Math.cos(phi);
+              if (y < 0) return null;
+              return (
+                <Instance key={i} position={[x, y, z]} rotation={[Math.random(), Math.random(), Math.random()]} />
+              );
+            })}
+          </Instances>
         </group>
 
-        {/* Eyes */}
+        {/* Eyes - Simplified */}
         {[-0.12, 0.12].map((x, i) => (
           <group key={i} position={[x, 0.05, 0.38]}>
-            <mesh><sphereGeometry args={[0.06, 32, 32]} /><meshStandardMaterial color="white" /></mesh>
+            <mesh><sphereGeometry args={[0.06, 16, 16]} /><meshStandardMaterial color="white" /></mesh>
             <mesh position={[0, 0, 0.03]}>
-              <sphereGeometry args={[0.035, 32, 32]} />
-              <meshPhysicalMaterial color="#3d2b1f" roughness={0} transmission={0.8} thickness={0.1} ior={1.4} />
+              <sphereGeometry args={[0.035, 16, 16]} />
+              <meshStandardMaterial color="#3d2b1f" roughness={0.3} />
             </mesh>
-            <mesh position={[0, 0, 0.05]}><circleGeometry args={[0.015, 16]} /><meshBasicMaterial color="black" /></mesh>
+            <mesh position={[0, 0, 0.05]}><circleGeometry args={[0.015, 8]} /><meshBasicMaterial color="black" /></mesh>
             <mesh position={[0.02, 0.02, 0.06]}><sphereGeometry args={[0.008, 8, 8]} /><meshBasicMaterial color="white" /></mesh>
           </group>
         ))}
@@ -709,27 +708,26 @@ function DetailedFrontRow() {
 }
 
 function ArenaCrowd({ isGoal }: { isGoal: boolean | null }) {
-  const count = 3000; // More massive
-  const tiers = 5; // More tiers
+  const count = 1000; // Drastically reduced for performance
+  const tiers = 3;
   const spectatorsPerSide = Math.floor(count / 4);
   
   const spectators = useMemo(() => {
     const temp = [];
-    // Define the boundaries of the stands
     const sides = [
-      { start: [-22, -32], end: [22, -32], dir: [1, 0], normal: [0, 1] }, // Bottom
-      { start: [22, -32], end: [22, 32], dir: [0, 1], normal: [-1, 0] }, // Right
-      { start: [22, 32], end: [-22, 32], dir: [-1, 0], normal: [0, -1] }, // Top
-      { start: [-22, 32], end: [-22, -32], dir: [0, -1], normal: [1, 0] }, // Left
+      { start: [-22, -32], end: [22, -32], dir: [1, 0], normal: [0, 1] },
+      { start: [22, -32], end: [22, 32], dir: [0, 1], normal: [-1, 0] },
+      { start: [22, 32], end: [-22, 32], dir: [-1, 0], normal: [0, -1] },
+      { start: [-22, 32], end: [-22, -32], dir: [0, -1], normal: [1, 0] },
     ];
 
     sides.forEach((side, sideIdx) => {
       const length = sideIdx % 2 === 0 ? 44 : 64;
-      const perSide = Math.floor(count * (length / 216)); // Proportional to length
+      const perSide = Math.floor(count * (length / 216));
 
       for (let t = 0; t < tiers; t++) {
-        const offsetDist = 2 + t * 3;
-        const y = 1 + t * 2;
+        const offsetDist = 2 + t * 4;
+        const y = 1 + t * 2.5;
         
         for (let i = 0; i < perSide; i++) {
           const progress = i / perSide;
@@ -737,10 +735,10 @@ function ArenaCrowd({ isGoal }: { isGoal: boolean | null }) {
           const z = side.start[1] + side.dir[1] * length * progress + side.normal[1] * offsetDist;
           
           temp.push({
-            position: [x, y, z] as [number, number, number],
-            rotation: [0, Math.atan2(side.normal[0], side.normal[1]), 0] as [number, number, number],
-            color: new THREE.Color().setHSL(Math.random(), 0.8, 0.6),
-            scale: 0.9 + Math.random() * 0.5,
+            position: new THREE.Vector3(x, y, z),
+            rotation: new THREE.Euler(0, Math.atan2(side.normal[0], side.normal[1]), 0),
+            color: new THREE.Color().setHSL(Math.random(), 0.7, 0.5),
+            scale: 0.8 + Math.random() * 0.4,
             offset: Math.random() * Math.PI * 2
           });
         }
@@ -748,6 +746,32 @@ function ArenaCrowd({ isGoal }: { isGoal: boolean | null }) {
     });
     return temp;
   }, []);
+
+  const meshRef = useRef<THREE.InstancedMesh>(null);
+  const tempMatrix = useMemo(() => new THREE.Matrix4(), []);
+  const tempPos = useMemo(() => new THREE.Vector3(), []);
+  const tempQuat = useMemo(() => new THREE.Quaternion(), []);
+  const tempScale = useMemo(() => new THREE.Vector3(), []);
+
+  useFrame((state) => {
+    if (!meshRef.current) return;
+    const t = state.clock.elapsedTime;
+    const speed = isGoal ? 12 : 4;
+    const amplitude = isGoal ? 0.6 : 0.15;
+
+    spectators.forEach((s, i) => {
+      tempPos.copy(s.position);
+      tempPos.y += Math.sin(t * speed + s.offset) * amplitude;
+      tempQuat.setFromEuler(s.rotation);
+      tempScale.set(s.scale, s.scale, s.scale);
+      
+      tempMatrix.compose(tempPos, tempQuat, tempScale);
+      meshRef.current?.setMatrixAt(i, tempMatrix);
+      meshRef.current?.setColorAt(i, s.color);
+    });
+    meshRef.current.instanceMatrix.needsUpdate = true;
+    if (meshRef.current.instanceColor) meshRef.current.instanceColor.needsUpdate = true;
+  });
 
   return (
     <group>
@@ -762,39 +786,17 @@ function ArenaCrowd({ isGoal }: { isGoal: boolean | null }) {
           <mesh>
             <planeGeometry args={[10, 2]} />
             <meshStandardMaterial color="#1e40af" side={THREE.DoubleSide} />
-            <Text
-              position={[0, 0, 0.05]}
-              fontSize={1}
-              color="white"
-            >
-              {b.text}
-            </Text>
+            <Text position={[0, 0, 0.05]} fontSize={1} color="white">{b.text}</Text>
           </mesh>
         </group>
       ))}
 
-      {/* Instanced Spectators */}
-      <Instances range={spectators.length}>
+      <instancedMesh ref={meshRef} args={[undefined, undefined, spectators.length]}>
         <capsuleGeometry args={[0.25, 0.6, 4, 8]} />
-        <meshStandardMaterial roughness={0.6} />
-        {spectators.map((s, i) => (
-          <SpectatorInstance key={i} {...s} />
-        ))}
-      </Instances>
+        <meshStandardMaterial roughness={0.8} />
+      </instancedMesh>
     </group>
   );
-}
-
-function SpectatorInstance({ position, rotation, color, scale, offset, isGoal }: any) {
-  const ref = useRef<any>(null);
-  useFrame((state) => {
-    if (ref.current) {
-      const speed = isGoal ? 12 : 4;
-      const amplitude = isGoal ? 0.5 : 0.15;
-      ref.current.position.y = position[1] + Math.sin(state.clock.elapsedTime * speed + offset) * amplitude;
-    }
-  });
-  return <Instance ref={ref} position={position} rotation={rotation} color={color} scale={scale} />;
 }
 
 export function StadiumGame({ language, onBack, setDoveMessage, setDoveCheering }: any) {
@@ -1069,11 +1071,11 @@ export function StadiumGame({ language, onBack, setDoveMessage, setDoveCheering 
             fov={isPortrait ? 25 : isCinematic ? 30 : 50} 
           />
           <ambientLight intensity={0.4} />
-          {/* Stadium Floodlights */}
-          <spotLight position={[30, 40, 40]} angle={0.5} penumbra={0.5} intensity={3} color="#ffffff" castShadow />
-          <spotLight position={[-30, 40, 40]} angle={0.5} penumbra={0.5} intensity={3} color="#ffffff" castShadow />
-          <spotLight position={[30, 40, -40]} angle={0.5} penumbra={0.5} intensity={3} color="#ffffff" castShadow />
-          <spotLight position={[-30, 40, -40]} angle={0.5} penumbra={0.5} intensity={3} color="#ffffff" castShadow />
+          {/* Stadium Floodlights - Optimized: Only one shadow caster */}
+          <spotLight position={[30, 40, 40]} angle={0.5} penumbra={0.5} intensity={3} color="#ffffff" castShadow shadow-mapSize={[512, 512]} />
+          <spotLight position={[-30, 40, 40]} angle={0.5} penumbra={0.5} intensity={3} color="#ffffff" />
+          <spotLight position={[30, 40, -40]} angle={0.5} penumbra={0.5} intensity={3} color="#ffffff" />
+          <spotLight position={[-30, 40, -40]} angle={0.5} penumbra={0.5} intensity={3} color="#ffffff" />
           
           <directionalLight 
             position={[0, 50, 0]} 

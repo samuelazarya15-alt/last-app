@@ -283,16 +283,12 @@ function DetailedPlayerPortrait() {
       {/* 2. Head (Eritrean Descent, Pore Detail, Sweat) */}
       <group position={[0, 1.8, 0]}>
         <mesh castShadow>
-          <sphereGeometry args={[0.45, 64, 64]} />
-          <meshPhysicalMaterial 
-            ref={skinRef}
-            color="#5d3a24" // Rich Eritrean skin tone
-            roughness={0.2} // Sweat sheen
-            metalness={0}
-            transmission={0.1} // SSS
-            thickness={0.5}
-            clearcoat={0.3} // Extra sweat layer
-            clearcoatRoughness={0.1}
+          <sphereGeometry args={[0.45, 32, 32]} />
+          <meshStandardMaterial 
+            ref={skinRef as any}
+            color="#5d3a24" 
+            roughness={0.4} 
+            metalness={0.1}
           />
         </mesh>
 
@@ -304,46 +300,42 @@ function DetailedPlayerPortrait() {
           </mesh>
         ))}
 
-        {/* 3. Strand-based Curly Hair */}
+        {/* 3. Strand-based Curly Hair  - Optimized*/}
         <group position={[0, 0.3, 0]}>
-          {Array.from({ length: 150 }).map((_, i) => {
-            const phi = Math.acos(-1 + (2 * i) / 150);
-            const theta = Math.sqrt(150 * Math.PI) * phi;
-            const x = 0.45 * Math.cos(theta) * Math.sin(phi);
-            const y = 0.45 * Math.sin(theta) * Math.sin(phi);
-            const z = 0.45 * Math.cos(phi);
-            if (y < 0) return null; // Only top half
-            return (
-              <mesh key={i} position={[x, y, z]} rotation={[Math.random(), Math.random(), Math.random()]}>
-                <torusGeometry args={[0.03, 0.005, 8, 16, Math.PI]} />
-                <meshStandardMaterial color="#1a0f08" />
-              </mesh>
-            );
-          })}
+          <Instances limit={150}>
+            <torusGeometry args={[0.03, 0.005, 8, 16, Math.PI]} />
+            <meshStandardMaterial color="#1a0f08" />
+            {Array.from({ length: 150 }).map((_, i) => {
+              const phi = Math.acos(-1 + (2 * i) / 150);
+              const theta = Math.sqrt(150 * Math.PI) * phi;
+              const x = 0.45 * Math.cos(theta) * Math.sin(phi);
+              const y = 0.45 * Math.sin(theta) * Math.sin(phi);
+              const z = 0.45 * Math.cos(phi);
+              if (y < 0) return null; // Only top half
+              return (
+                <Instance key={i} position={[x, y, z]} rotation={[Math.random(), Math.random(), Math.random()]} />
+              );
+            })}
+          </Instances>
         </group>
 
-        {/* 4. Refractive Eyes with Reflections */}
+        {/* 4. Refractive Eyes with Reflections - Simplified */}
         {[-0.12, 0.12].map((x, i) => (
           <group key={i} position={[x, 0.05, 0.38]}>
             <mesh>
-              <sphereGeometry args={[0.06, 32, 32]} />
+              <sphereGeometry args={[0.06, 16, 16]} />
               <meshStandardMaterial color="white" />
             </mesh>
             <mesh position={[0, 0, 0.03]}>
-              <sphereGeometry args={[0.035, 32, 32]} />
-              <meshPhysicalMaterial 
-                ref={eyeRef}
+              <sphereGeometry args={[0.035, 16, 16]} />
+              <meshStandardMaterial 
                 color="#3d2b1f" 
-                roughness={0} 
-                metalness={0.5}
-                transmission={0.8}
-                thickness={0.1}
-                ior={1.4}
+                roughness={0.3} 
               />
             </mesh>
             {/* Pupil */}
             <mesh position={[0, 0, 0.05]}>
-              <circleGeometry args={[0.015, 16]} />
+              <circleGeometry args={[0.015, 8]} />
               <meshBasicMaterial color="black" />
             </mesh>
             {/* Catch Light Reflection */}
@@ -513,8 +505,8 @@ function DetailedFrontRow() {
 }
 
 function ArenaCrowd() {
-  const count = 2000;
-  const tiers = 8;
+  const count = 1000;
+  const tiers = 4;
   const spectatorsPerTier = Math.floor(count / tiers);
   
   const spectators = useMemo(() => {
@@ -531,8 +523,8 @@ function ArenaCrowd() {
         const z = Math.sin(angle) * radius;
         
         temp.push({
-          position: [x, y - 2, z] as [number, number, number],
-          rotation: [0, -angle + Math.PI / 2, 0] as [number, number, number],
+          position: new THREE.Vector3(x, y - 2, z),
+          rotation: new THREE.Euler(0, -angle + Math.PI / 2, 0),
           color: new THREE.Color().setHSL(Math.random(), 0.8, 0.4),
           scale: 0.7 + Math.random() * 0.6,
           offset: Math.random() * Math.PI * 2
@@ -541,6 +533,30 @@ function ArenaCrowd() {
     }
     return temp;
   }, []);
+
+  const meshRef = useRef<THREE.InstancedMesh>(null);
+  const tempMatrix = useMemo(() => new THREE.Matrix4(), []);
+  const tempPos = useMemo(() => new THREE.Vector3(), []);
+  const tempQuat = useMemo(() => new THREE.Quaternion(), []);
+  const tempScale = useMemo(() => new THREE.Vector3(), []);
+
+  useFrame((state) => {
+    if (!meshRef.current) return;
+    const t = state.clock.elapsedTime;
+    
+    spectators.forEach((s, i) => {
+      tempPos.copy(s.position);
+      tempPos.y += Math.sin(t * 5 + s.offset) * 0.1;
+      tempQuat.setFromEuler(s.rotation);
+      tempScale.set(s.scale, s.scale, s.scale);
+      
+      tempMatrix.compose(tempPos, tempQuat, tempScale);
+      meshRef.current?.setMatrixAt(i, tempMatrix);
+      meshRef.current?.setColorAt(i, s.color);
+    });
+    meshRef.current.instanceMatrix.needsUpdate = true;
+    if (meshRef.current.instanceColor) meshRef.current.instanceColor.needsUpdate = true;
+  });
 
   return (
     <group>
@@ -567,27 +583,12 @@ function ArenaCrowd() {
         );
       })}
 
-      {/* Instanced Spectators */}
-      <Instances range={spectators.length}>
+      <instancedMesh ref={meshRef} args={[undefined, undefined, spectators.length]}>
         <capsuleGeometry args={[0.2, 0.5, 4, 8]} />
         <meshStandardMaterial roughness={0.5} />
-        {spectators.map((s, i) => (
-          <SpectatorInstance key={i} {...s} />
-        ))}
-      </Instances>
+      </instancedMesh>
     </group>
   );
-}
-
-function SpectatorInstance({ position, rotation, color, scale, offset }: any) {
-  const ref = useRef<any>(null);
-  useFrame((state) => {
-    if (ref.current) {
-      // Cheering animation
-      ref.current.position.y = position[1] + Math.sin(state.clock.elapsedTime * 5 + offset) * 0.1;
-    }
-  });
-  return <Instance ref={ref} position={position} rotation={rotation} color={color} scale={scale} />;
 }
 
 export function Basketball3DGame({ language, onBack, setDoveMessage, setDoveCheering }: any) {
@@ -702,8 +703,8 @@ export function Basketball3DGame({ language, onBack, setDoveMessage, setDoveChee
           fov={isPortrait ? 25 : isCinematic ? 30 : 50} 
         />
         <ambientLight intensity={0.2} />
-        <pointLight position={[10, 10, 10]} intensity={1} color="#ff8c00" castShadow />
-        <spotLight position={[0, 10, 0]} intensity={2} color="#00bfff" castShadow />
+        <pointLight position={[10, 10, 10]} intensity={1} color="#ff8c00" castShadow shadow-mapSize={[512, 512]} />
+        <spotLight position={[0, 10, 0]} intensity={2} color="#00bfff" />
         
         <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />
         <Sparkles count={200} scale={20} size={1} speed={0.2} color="#ffd700" />
@@ -711,10 +712,10 @@ export function Basketball3DGame({ language, onBack, setDoveMessage, setDoveChee
         <Environment preset="night" />
         
         {/* Arena Lighting */}
-        <spotLight position={[15, 20, 15]} angle={0.3} penumbra={1} intensity={2} color="#ffffff" castShadow />
-        <spotLight position={[-15, 20, -15]} angle={0.3} penumbra={1} intensity={2} color="#ffffff" castShadow />
-        <spotLight position={[15, 20, -15]} angle={0.3} penumbra={1} intensity={2} color="#ffffff" castShadow />
-        <spotLight position={[-15, 20, 15]} angle={0.3} penumbra={1} intensity={2} color="#ffffff" castShadow />
+        <spotLight position={[15, 20, 15]} angle={0.3} penumbra={1} intensity={2} color="#ffffff" castShadow shadow-mapSize={[512, 512]} />
+        <spotLight position={[-15, 20, -15]} angle={0.3} penumbra={1} intensity={2} color="#ffffff" />
+        <spotLight position={[15, 20, -15]} angle={0.3} penumbra={1} intensity={2} color="#ffffff" />
+        <spotLight position={[-15, 20, 15]} angle={0.3} penumbra={1} intensity={2} color="#ffffff" />
         
         <ArenaCrowd />
         {!isPortrait && <DetailedFrontRow />}
