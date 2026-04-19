@@ -163,11 +163,28 @@ export const updateStats = async (xpGain: number = 0) => {
       const newStars = Math.floor(newTotalXp / 10);
       const newLevel = Math.floor(newTotalXp / 1000) + 1;
 
+      // Handle Streak Logic
+      let newStreak = stats.streak || 1;
+      const lastUpdate = stats.updatedAt?.toDate() || new Date();
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      lastUpdate.setHours(0, 0, 0, 0);
+
+      const diffTime = today.getTime() - lastUpdate.getTime();
+      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+      if (diffDays === 1) {
+        newStreak += 1;
+      } else if (diffDays > 1) {
+        newStreak = 1;
+      }
+
       await setDoc(userRef, {
         ...stats,
         total_xp: newTotalXp,
         stars: newStars,
         level: newLevel,
+        streak: newStreak,
         updatedAt: serverTimestamp()
       });
     }

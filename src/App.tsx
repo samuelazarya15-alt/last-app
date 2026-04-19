@@ -37,6 +37,7 @@ import { CoffeeCeremonyGame } from './components/CoffeeCeremonyGame';
 import { GrandparentGame } from './components/GrandparentGame';
 import { FamilyTreeGame } from './components/FamilyTreeGame';
 import { Taskbar } from './components/Taskbar';
+import { InstallPrompt } from './components/InstallPrompt';
 import { SettingsModal } from './components/SettingsModal';
 import { Home } from './components/Home';
 import { Learn } from './components/Learn';
@@ -562,6 +563,7 @@ export default function App() {
             </div>
             
             <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
+            <InstallPrompt />
           </motion.div>
         )}
       </AnimatePresence>

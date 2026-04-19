@@ -1,17 +1,16 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { voiceCoach } from '../lib/VoiceCoach';
-import wordsData from '../data/words.json';
+import { words as wordsData } from '../data/wordHelpers';
 import { Volume2, Search } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { DoveMascot } from './DoveMascot';
 
 const CATEGORIES = [
-  'All', 'Family', 'Colors', 'Adjectives', 'Verbs', 'Professions', 
-  'Food', 'Nature', 'Phrases', 'Dates', 'Numbers', 'Body', 
-  'House', 'Transport', 'Places', 'Clothing', 'Time', 'Emotions', 
-  'Weather', 'School', 'Tools', 'Tech', 'Sports', 'Hobbies', 
-  'Shapes', 'Directions'
+  'All', 'Family', 'Colors', 'Animals', 'Transport', 'Food', 'Tech', 'Time', 
+  'Nature', 'Numbers', 'People', 'Body', 'Clothing', 'House', 'Kitchen', 
+  'Verbs', 'Emotions', 'Travel', 'Society', 'Adjectives', 'Places', 
+  'Weather', 'Abstract', 'Health', 'Education', 'Philosophy', 'General'
 ];
 
 export function Learn({ language }: { language: string }) {
@@ -105,7 +104,7 @@ export function Learn({ language }: { language: string }) {
       <div className="flex-1 overflow-y-auto space-y-3 px-4 py-4 pb-20">
         {filteredWords.map((word) => {
           const translation = word[language.toLowerCase() as keyof typeof word] as string;
-          const phonetic = (word as any).phonetic || `[${translation.toLowerCase()}]`;
+          const phonetic = (word as any).latin || (word as any).phonetic || `[${translation.toLowerCase()}]`;
           const isActive = activeWordId === word.id;
 
           return (

@@ -25,18 +25,13 @@ function GeezFireTrail({ position, isAnimating }: { position: THREE.Vector3, isA
     const t = state.clock.elapsedTime;
     trailRefs.current.forEach((ref, i) => {
       if (ref) {
-        // Dynamic comet tail motion
         const delay = (i + 1) * 0.15;
-        const orbitRadius = 0.3 + Math.sin(t * 8 + i) * 0.2;
         const angle = t * 15 + i * (Math.PI / 2);
-        
-        const targetX = position.x + Math.cos(angle) * orbitRadius;
-        const targetY = position.y + Math.sin(angle) * orbitRadius;
-        const targetZ = position.z + delay * 10;
-
-        ref.position.lerp(new THREE.Vector3(targetX, targetY, targetZ), 0.2);
-        ref.scale.setScalar((1 - i * 0.15) * (1 + Math.sin(t * 20) * 0.3));
-        ref.rotation.y += 0.2;
+        const targetX = position.x + Math.cos(angle) * 0.3;
+        const targetY = position.y + Math.sin(angle) * 0.3;
+        const targetZ = position.z + delay * 5;
+        ref.position.set(targetX, targetY, targetZ);
+        ref.scale.setScalar(1);
       }
     });
   });
@@ -47,16 +42,12 @@ function GeezFireTrail({ position, isAnimating }: { position: THREE.Vector3, isA
     <group>
       {letters.map((char, i) => (
         <group key={i} ref={(el) => (trailRefs.current[i] = el!)}>
-          {/* Flame Core */}
           <Text
-            fontSize={0.8}
-            color={i % 2 === 0 ? "#ff4500" : "#00bfff"} // Orange and Blue flames
+            fontSize={0.4}
+            color={i % 2 === 0 ? "#ff4500" : "#00bfff"}
           >
             {char}
           </Text>
-          {/* Flame Aura */}
-          <Sparkles count={15} scale={0.5} size={2} speed={2} color={i % 2 === 0 ? "#ff8c00" : "#00bfff"} />
-          <pointLight intensity={2} distance={2} color={i % 2 === 0 ? "#ff4500" : "#00bfff"} />
         </group>
       ))}
     </group>
@@ -505,8 +496,8 @@ function DetailedFrontRow() {
 }
 
 function ArenaCrowd() {
-  const count = 1000;
-  const tiers = 4;
+  const count = 300;
+  const tiers = 2;
   const spectatorsPerTier = Math.floor(count / tiers);
   
   const spectators = useMemo(() => {
@@ -703,22 +694,11 @@ export function Basketball3DGame({ language, onBack, setDoveMessage, setDoveChee
           fov={isPortrait ? 25 : isCinematic ? 30 : 50} 
         />
         <ambientLight intensity={0.2} />
-        <pointLight position={[10, 10, 10]} intensity={1} color="#ff8c00" castShadow shadow-mapSize={[512, 512]} />
-        <spotLight position={[0, 10, 0]} intensity={2} color="#00bfff" />
-        
-        <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />
-        <Sparkles count={200} scale={20} size={1} speed={0.2} color="#ffd700" />
-        
-        <Environment preset="night" />
-        
-        {/* Arena Lighting */}
-        <spotLight position={[15, 20, 15]} angle={0.3} penumbra={1} intensity={2} color="#ffffff" castShadow shadow-mapSize={[512, 512]} />
-        <spotLight position={[-15, 20, -15]} angle={0.3} penumbra={1} intensity={2} color="#ffffff" />
-        <spotLight position={[15, 20, -15]} angle={0.3} penumbra={1} intensity={2} color="#ffffff" />
-        <spotLight position={[-15, 20, 15]} angle={0.3} penumbra={1} intensity={2} color="#ffffff" />
+        <pointLight position={[10, 10, 10]} intensity={1} color="#ff8c00" />
+        <Environment preset="city" />
         
         <ArenaCrowd />
-        {!isPortrait && <DetailedFrontRow />}
+        {/* {!isPortrait && <DetailedFrontRow />} Removed for speed */}
         {isPortrait && <DetailedPlayerPortrait />}
         
         {/* Court */}

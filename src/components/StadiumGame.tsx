@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback, Suspense, useMemo } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { PerspectiveCamera, OrbitControls, Text, Float, ContactShadows, useHelper, Sky, Instances, Instance, Sparkles } from '@react-three/drei';
+import { PerspectiveCamera, OrbitControls, Text, Float, ContactShadows, useHelper, Sky, Instances, Instance, Sparkles, Environment } from '@react-three/drei';
 import * as THREE from 'three';
 import { motion, AnimatePresence } from 'motion/react';
 import confetti from 'canvas-confetti';
@@ -143,12 +143,10 @@ function HolographicShield({ isShattered, targetX }: { isShattered: boolean, tar
           transparent 
           opacity={0.3} 
           side={THREE.DoubleSide}
-          emissive="#00bfff"
-          emissiveIntensity={0.5}
         />
       </mesh>
-      {/* Floating Letters in Shield */}
-      {Array.from({ length: 100 }).map((_, i) => (
+      {/* Reduced letters in Shield */}
+      {Array.from({ length: 20 }).map((_, i) => (
         <group key={i} position={[
           (Math.random() - 0.5) * 9,
           (Math.random() - 0.5) * 4.5,
@@ -161,7 +159,6 @@ function HolographicShield({ isShattered, targetX }: { isShattered: boolean, tar
           >
             {letters[i % letters.length]}
           </Text>
-          <pointLight intensity={0.1} distance={1} color="#00bfff" />
         </group>
       ))}
     </group>
@@ -170,7 +167,7 @@ function HolographicShield({ isShattered, targetX }: { isShattered: boolean, tar
 
 function ShatterEffect({ position }: { position: [number, number, number] }) {
   const shards = useMemo(() => {
-    return Array.from({ length: 80 }).map(() => ({
+    return Array.from({ length: 20 }).map(() => ({
       pos: [0, 0, 0] as [number, number, number],
       vel: [
         (Math.random() - 0.5) * 15,
@@ -178,7 +175,7 @@ function ShatterEffect({ position }: { position: [number, number, number] }) {
         (Math.random() - 0.5) * 8
       ] as [number, number, number],
       rot: [Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI] as [number, number, number],
-      size: 0.05 + Math.random() * 0.2,
+      size: 0.1 + Math.random() * 0.2,
       char: ['ሀ', 'ለ', 'ሐ', 'መ', 'ረ', 'ሰ'][Math.floor(Math.random() * 6)]
     }));
   }, []);
@@ -188,7 +185,6 @@ function ShatterEffect({ position }: { position: [number, number, number] }) {
       {shards.map((s, i) => (
         <Shard key={i} {...s} />
       ))}
-      <Sparkles count={100} scale={5} size={3} speed={2} color="#00bfff" />
     </group>
   );
 }
@@ -708,8 +704,8 @@ function DetailedFrontRow() {
 }
 
 function ArenaCrowd({ isGoal }: { isGoal: boolean | null }) {
-  const count = 1000; // Drastically reduced for performance
-  const tiers = 3;
+  const count = 400; // Drastically reduced for performance
+  const tiers = 2;
   const spectatorsPerSide = Math.floor(count / 4);
   
   const spectators = useMemo(() => {
@@ -1070,17 +1066,10 @@ export function StadiumGame({ language, onBack, setDoveMessage, setDoveCheering 
             position={isPortrait ? [0, 1.5, 0] : isCinematic ? [0, 1, 12] : [0, 8, 10]} 
             fov={isPortrait ? 25 : isCinematic ? 30 : 50} 
           />
-          <ambientLight intensity={0.4} />
-          {/* Stadium Floodlights - Optimized: Only one shadow caster */}
-          <spotLight position={[30, 40, 40]} angle={0.5} penumbra={0.5} intensity={3} color="#ffffff" castShadow shadow-mapSize={[512, 512]} />
-          <spotLight position={[-30, 40, 40]} angle={0.5} penumbra={0.5} intensity={3} color="#ffffff" />
-          <spotLight position={[30, 40, -40]} angle={0.5} penumbra={0.5} intensity={3} color="#ffffff" />
-          <spotLight position={[-30, 40, -40]} angle={0.5} penumbra={0.5} intensity={3} color="#ffffff" />
-          
-          <directionalLight 
-            position={[0, 50, 0]} 
-            intensity={0.5} 
-          />
+          <ambientLight intensity={0.6} />
+          {/* Optimized Lighting: Only one simple light */}
+          <directionalLight position={[10, 20, 10]} intensity={1.5} />
+          <Environment preset="city" />
           
           <OrbitControls 
             enableZoom={false} 
@@ -1092,7 +1081,7 @@ export function StadiumGame({ language, onBack, setDoveMessage, setDoveCheering 
 
           <Pitch />
           <ArenaCrowd isGoal={isGoal} />
-          {!isPortrait && <DetailedFrontRow />}
+          {/* DetailedFrontRow removed for performance */}
           {isPortrait && <DetailedPlayerPortrait />}
           
           {!isPortrait && (
