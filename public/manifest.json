@@ -1,11 +1,17 @@
 {
-  "short_name": "LearnTigrinya",
-  "name": "Learn Tigrinya: 3D Games",
+  "short_name": "SelamLearn",
+  "name": "Selam Learn Tigrinya: 3D Games",
   "icons": [
     {
-      "src": "icon.svg",
-      "type": "image/svg+xml",
-      "sizes": "192x192 512x512",
+      "src": "icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
       "purpose": "any maskable"
     }
   ],
