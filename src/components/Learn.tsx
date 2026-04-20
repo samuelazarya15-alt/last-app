@@ -67,7 +67,7 @@ export function Learn({ language }: { language: string }) {
       </div>
 
       {/* Optimized Header (14vh) */}
-      <div className="h-[14vh] shrink-0 bg-white/80 backdrop-blur-md shadow-sm z-10 flex flex-col items-center justify-center px-4 pt-1">
+      <div className="h-[14vh] shrink-0 relative z-10 bg-white/80 backdrop-blur-md shadow-sm flex flex-col items-center justify-center px-4 pt-1">
         <div className="w-full max-w-xl relative mb-2">
           <input
             type="text"
@@ -101,9 +101,9 @@ export function Learn({ language }: { language: string }) {
       </div>
 
       {/* Word List */}
-      <div className="flex-1 overflow-y-auto space-y-3 px-4 py-4 pb-20">
+      <div className="flex-1 relative z-10 overflow-y-auto space-y-3 px-4 py-4 pb-20">
         {filteredWords.map((word) => {
-          const translation = word[language.toLowerCase() as keyof typeof word] as string;
+          const translation = (word[language.toLowerCase() as keyof typeof word] as string) || '';
           const phonetic = (word as any).latin || (word as any).phonetic || `[${translation.toLowerCase()}]`;
           const isActive = activeWordId === word.id;
 
